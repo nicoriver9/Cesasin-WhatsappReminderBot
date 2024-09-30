@@ -1,0 +1,37 @@
+import { Message } from 'whatsapp-web.js';
+import { PrismaService } from '../prisma/prisma.service';
+import { Observable } from 'rxjs';
+export declare class WhatsappService {
+    private readonly prisma;
+    private readonly logger;
+    private client;
+    private clientInfo;
+    private messageStatusMap;
+    private clientStatus$;
+    private qrCodeSubject$;
+    private authenticatedPhoneNumber;
+    private currentUserId;
+    private conversationModeActive;
+    private botEnabled;
+    constructor(prisma: PrismaService);
+    getClientStatus(): Observable<string>;
+    getQRCode(): Observable<string | null>;
+    getAuthenticatedPhoneNumber(): Observable<string | null>;
+    sendMessage(to: string, message: string, options?: string): Promise<number>;
+    private loadConversationalResponses;
+    handleConversationalMessage(message: Message): Promise<void>;
+    private savePatientResponse;
+    private updatePatientResponse;
+    private loadReminderResponses;
+    handleReminderMessage(message: Message, whatsappMessage: any): Promise<void>;
+    private updatePatientReminder;
+    private convertToSpanishDate;
+    setCurrentUserId(userId: number): void;
+    startConversationMode(): void;
+    stopConversationMode(): void;
+    isConversationModeActive(): boolean;
+    setBotEnabled(enabled: boolean): void;
+    isBotEnabled(): boolean;
+    private logUserAudit;
+    private getIPAddress;
+}
