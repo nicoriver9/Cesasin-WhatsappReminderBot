@@ -196,7 +196,7 @@ export class WhatsappService {
       case 2: // Después de elegir opción 1 o 2
         await this.client.sendMessage(from, responses.thanks.message);
         await this.updatePatientResponse(contactName, from, body, 2); // Finalizar conversación
-        //await this.savePatientResponse(contactName, from, body, 0);
+        await this.savePatientResponse(contactName, from, body, 0);
         break;
       
             
