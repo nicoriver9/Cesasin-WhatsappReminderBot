@@ -174,7 +174,7 @@ export class WhatsappService {
         await this.client.sendMessage(from, responses.welcome.message);
         await this.savePatientResponse(contactName, from, body, 1); // Iniciar conversación
       } else {
-        await this.client.sendMessage(from, responses.welcome.message);
+        await this.client.sendMessage(from, responses.unknown.message);
       }
       return;
     }
@@ -184,16 +184,16 @@ export class WhatsappService {
       case 1: // Después del mensaje de bienvenida
         if (lowerCaseBody === '1') {
           await this.client.sendMessage(from, responses.option1.message);
-          await this.savePatientResponse(contactName, from, body, 0); // 0 indica que la conversación continua
+          await this.savePatientResponse(contactName, from, body, 0);
         } else if (lowerCaseBody === '2') {
           await this.client.sendMessage(from, responses.option2.message);
-          await this.savePatientResponse(contactName, from, body, 2); // 2 indica que la conversación termina
+          await this.savePatientResponse(contactName, from, body, 2);
         } else {
           await this.client.sendMessage(from, responses.unknownOption.message);
         }
         break;
       
-      case 2: // Después de elegir opción  2
+      case 2: // Después de elegir opción 1 o 2
         await this.client.sendMessage(from, responses.thanks.message);
         await this.updatePatientResponse(contactName, from, body, 2); // Finalizar conversación
         await this.savePatientResponse(contactName, from, body, 0);
@@ -274,17 +274,26 @@ export class WhatsappService {
     });
 
     if (reminderState) {
-      if (reminderState.task_status === 2 && reminderState.reminder_state === 1) {
-        await this.handleRescheduledAppointment(from, responses);
+      if(reminderState.task_status === 2 && reminderState.reminder_state === 1){
+        await sendResponse(responses.thanks.message);
+        await this.updatePatientReminder(from, 2, 2);
         return;
       }
-
-      if (lowerCaseBody.includes('hola')) {
-        await this.handleInitialGreeting(from, responses, contactName, patientFullName, appointmentDate, doctorName);
+      // Primer mensaje o recordatorio no iniciado
+      if (lowerCaseBody.includes('hola')) { 
+        await sendResponse(
+          responses.welcome.message
+            .replace('{contactName}', contactName || patientFullName)
+            .replace('{patientFullName}', patientFullName)
+            .replace('{appointmentDate}', this.convertToSpanishDate(appointmentDate))
+            .replace('{doctorName}', doctorName)
+        );
+        await sendResponse(responses.welcome.additionalMessage);
+        
+        // Actualizar el estado del recordatorio
+        await this.updatePatientReminder(from, 0, 1); // 1 indica que el saludo inicial se ha enviado      
         return;
-      }
-
-      if (reminderState.reminder_state === 0 && !lowerCaseBody.includes('hola')) {
+      } else if(reminderState.reminder_state === 0) {
         await sendResponse(responses.unknown.message);
         return;
       }
@@ -324,49 +333,6 @@ export class WhatsappService {
     }
 
     // Update the patient reminder status
-  }
-
-  private async handleRescheduledAppointment(from: string, responses: any) {
-    await this.sendResponse(from, responses.thanks.message);
-    await this.updatePatientReminder(from, 2, 2);
-  }
-
-  private async handleInitialGreeting(
-    from: string, 
-    responses: any, 
-    contactName: string, 
-    patientFullName: string, 
-    appointmentDate: string, 
-    doctorName: string
-  ) {
-    const welcomeMessage = this.formatWelcomeMessage(
-      responses.welcome.message,
-      contactName,
-      patientFullName,
-      appointmentDate,
-      doctorName
-    );
-    await this.sendResponse(from, welcomeMessage);
-    await this.sendResponse(from, responses.welcome.additionalMessage);
-    await this.updatePatientReminder(from, 0, 1);
-  }
-
-  private formatWelcomeMessage(
-    template: string,
-    contactName: string,
-    patientFullName: string,
-    appointmentDate: string,
-    doctorName: string
-  ): string {
-    return template
-      .replace('{contactName}', contactName || patientFullName)
-      .replace('{patientFullName}', patientFullName)
-      .replace('{appointmentDate}', this.convertToSpanishDate(appointmentDate))
-      .replace('{doctorName}', doctorName);
-  }
-
-  private async sendResponse(to: string, message: string) {
-    await this.client.sendMessage(to, message);
   }
 
   // Actualizar el método updatePatientReminder para incluir el estado del recordatorio
