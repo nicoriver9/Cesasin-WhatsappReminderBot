@@ -1,0 +1,11 @@
+{
+    "welcome": {
+        "message": "Hola, este es un recordatorio del turno del paciente {patient_fullname} el {attachment} con {doctor}.",
+        "additionalMessage": "Por favor, elija una opción:",
+        "options": {
+            "1": "Confirmar cita",
+            "2": "Reprogramar cita",
+            "3": "Cancelar cita"
+        }
+    }
+}

@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model WhatsappSession {
+  id        Int      @id @default(autoincrement())
+  sessionId String   @unique
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  user_id      Int      @id @default(autoincrement())
+  username     String   @unique
+  password     String
+  email        String   @unique
+  role_id      Int
+  role         Role     @relation(fields: [role_id], references: [role_id])
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  UserAudit    UserAudit[]
+}
+
+model Role {
+  role_id      Int      @id @default(autoincrement())
+  role_name    String   @unique
+  description  String?
+  users        User[]
+}
+
+model UserAudit {
+  audit_id     Int      @id @default(autoincrement())
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [user_id])
+  action       String
+  action_date  DateTime @default(now())
+  ip_address   String?
+  details      String?
+}
+
+model WhatsappMsg {
+  whatsapp_msg_id        Int      @id @default(autoincrement())
+  patient_full_name      String   
+  patient_id             Int?     
+  patient_phone          String?  
+  message                String?  
+  task_status            Int?     
+  reception_status       Int?     
+  originating_phone_number String?
+  appointment_date       DateTime?                   // fecha_turno
+  doctor_name            String?  
+  attached_file          String?  
+  creation_date          DateTime?                   // creacion_fecha
+  creation_time          String?  
+  creation_user          String?  
+  completion_date        DateTime?                   // Fin Fecha
+  completion_time        String?
+  reminder_state         Int?     
+}
+
+model PatientResponses {
+  response_id             Int       @id @default(autoincrement())
+  patient_full_name       String?    @db.VarChar(255)
+  patient_phone           String     @db.VarChar(20)
+  appointment_date        DateTime?
+  response                String
+  doctor_name             String?    @db.VarChar(255)
+  received_at             DateTime   @default(now())
+  created_at              DateTime   @default(now())
+  conversationState       Int       @default(0)
+}
+
+

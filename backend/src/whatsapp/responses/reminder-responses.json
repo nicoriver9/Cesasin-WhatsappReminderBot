@@ -1,0 +1,30 @@
+{
+    "welcome": {      
+      "message": "Hola {patientFullName}, este es un recordatorio de su turno el {appointmentDate} con {doctorName}.",
+      "additionalMessage": "Por favor, elija una opción:\n1. Confirmar cita\n2. Reprogramar cita\n3. Cancelar cita"      
+    },
+    
+    "confirmed": { 
+      "message": "Estimado/a {contactName}, nos comunicamos para confirmar la cita del paciente {patientFullName} programada para el {appointmentDate} con el Dr./Lic. {doctorName}. La consulta se llevará a cabo en nuestra sede ubicada en Sobremonte 317, Ciudad.",
+      "additionalMessage": "Información importante:\n\nPor favor, le pedimos que llegue 10 minutos antes de su horario programado y se dirija al área de Secretaría para registrarse.\n"
+    },
+    "rescheduled": {
+      "message": "Por favor, escriba una nueva fecha para su turno."      
+    },
+    "cancelled": {
+      "message": "Has cancelado su turno.",
+      "additionalMessage": "Muchas gracias por su respuesta!"
+    },
+    "invalid": {
+      "message": "Opción no válida. Por favor, responde con 1, 2 o 3."
+    }, 
+    "additionalInformation": {
+      "message": "Para agendar su turno, por favor proporcione la siguiente información:\n\n1. Especialidad requerida (elija una): psiquiatría, psicología, neurología, nutrición, clínica médica, tratamiento de adicciones, TCA, o rehabilitación neurocognitiva*\n2. Nombre completo del profesional (si tiene preferencia)\n3. DNI (sin puntos ni espacios)*\n4. Apellido y nombre completo del paciente*\n5. Número de teléfono celular (formato: 549261XXXXXXX)*\n6. Domicilio completo y código postal*\n7. Fecha de nacimiento (formato: DD/MM/AAAA)*\n8. Dirección de correo electrónico*\n9. Obra social, plan y número de afiliado*\n10. Preferencia horaria (mañana o tarde)\n\nNota: Los campos marcados con * son obligatorios."
+    },
+    "unknown": {
+    "message": "Lo siento, no entiendo tu mensaje. Intenta con 'Hola'."
+    },
+    "thanks": {
+    "message": "Gracias por la información. La revisaremos y nos comunicaremos con Usted."
+  } 
+  }
