@@ -249,6 +249,7 @@ const ExcelViewer: React.FC = () => {
     } catch (err) {
       console.error("Error sending reminders:", err);
       alert("Failed to send reminders.");
+      navigate('/');
     } finally {
       await startConversationMode();
       setLoading(false);
