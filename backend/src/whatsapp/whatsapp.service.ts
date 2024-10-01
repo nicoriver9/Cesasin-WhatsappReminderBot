@@ -22,6 +22,9 @@ export class WhatsappService {
   private currentUserId: number | null = null;
   private conversationModeActive = false; // Estado del modo conversacional
   private botEnabled = true; // Estado del bot, true para habilitado, false para deshabilitado
+  private conversationalResponses: any; // Variable para almacenar respuestas conversacionales
+  private reminderResponses: any; // Variable para almacenar respuestas de recordatorio
+  private processingLocks: Map<string, boolean> = new Map();
 
 
   constructor(private readonly prisma: PrismaService) {
@@ -98,7 +101,11 @@ export class WhatsappService {
     }
     });
 
-    this.client.initialize();    
+    this.conversationalResponses = this.loadConversationalResponses();
+    this.reminderResponses = this.loadReminderResponses();
+    
+    this.client.initialize(); 
+    
   }
 
   getClientStatus(): Observable<string> {
@@ -152,57 +159,79 @@ export class WhatsappService {
   }
 
   async handleConversationalMessage(message: Message) {
-    const { from, body } = message;
-    const contact = await message.getContact();
-    const contactName = contact.pushname || contact.verifiedName;
-    const responses = this.loadConversationalResponses();
-    const lowerCaseBody = body.toLowerCase();
+    const { from } = message;
 
-    // Obtener el estado actual de la conversación
-    const conversationState = await this.prisma.patientResponses.findFirst({
-      where: {
-        patient_phone: from,
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
-
-    if (!conversationState || conversationState.conversationState === 0) {
-      // Nuevo usuario o conversación no iniciada
-      if (lowerCaseBody.includes('hola')) {        
-        await this.client.sendMessage(from, responses.welcome.message);
-        await this.savePatientResponse(contactName, from, body, 1); // Iniciar conversación
-      } else {
-        await this.client.sendMessage(from, responses.unknown.message);
-      }
-      return;
+    // Verificar si ya se está procesando un mensaje para este usuario
+    if (this.processingLocks.get(from)) {
+        await this.client.sendMessage(from, "Por favor, espera mientras procesamos tu mensaje.");
+        return;
     }
 
-    // Manejar estados de conversación
-    switch (conversationState.conversationState) {
-      case 1: // Después del mensaje de bienvenida
-        if (lowerCaseBody === '1') {
-          await this.client.sendMessage(from, responses.option1.message);
-          await this.savePatientResponse(contactName, from, body, 0);
-        } else if (lowerCaseBody === '2') {
-          await this.client.sendMessage(from, responses.option2.message);
-          await this.savePatientResponse(contactName, from, body, 2);
-        } else {
-          await this.client.sendMessage(from, responses.unknownOption.message);
+    // Establecer el bloqueo
+    this.processingLocks.set(from, true);
+
+    try {
+        const contact = await message.getContact();
+        const contactName = contact.pushname || contact.verifiedName;
+        const lowerCaseBody = message.body.toLowerCase();
+
+        // Obtener el estado actual de la conversación
+        const conversationState = await this.prisma.patientResponses.findFirst({
+            where: {
+                patient_phone: from,
+            },
+            orderBy: {
+                created_at: 'desc',
+            },
+        });
+
+        // Mapa de respuestas esperadas
+        const expectedResponses = {
+            0: 'hola', // Estado inicial
+            1: ['1', '2'], // Opciones después del mensaje de bienvenida
+            2: [] // No se esperan más respuestas
+        };
+
+        if (!conversationState || conversationState.conversationState === 0) {
+            // Nuevo usuario o conversación no iniciada
+            if (lowerCaseBody === expectedResponses[0]) {        
+                await this.client.sendMessage(from, this.conversationalResponses.welcome.message);
+                await this.savePatientResponse(contactName, from, message.body, 1); // Iniciar conversación
+            } else {
+                await this.client.sendMessage(from, this.conversationalResponses.unknown.message);                
+            }
+            return;
         }
-        break;
-      
-      case 2: // Después de elegir opción 1 o 2
-        await this.client.sendMessage(from, responses.thanks.message);
-        await this.updatePatientResponse(contactName, from, body, 2); // Finalizar conversación
-        await this.savePatientResponse(contactName, from, body, 0);
-        break;
-      
+
+        // Manejar estados de conversación
+        switch (conversationState.conversationState) {
+            case 1: // Después del mensaje de bienvenida
+                if (expectedResponses[1].includes(lowerCaseBody)) {
+                    if (lowerCaseBody === '1') {
+                        await this.client.sendMessage(from, this.conversationalResponses.option1.message);
+                        await this.savePatientResponse(contactName, from, message.body, 0); // 0 indica que la conversación continua
+                    } else if (lowerCaseBody === '2') {
+                        await this.client.sendMessage(from, this.conversationalResponses.option2.message);
+                        await this.savePatientResponse(contactName, from, message.body, 2); // 2 indica que la conversación termina
+                    }
+                } else {
+                    await this.client.sendMessage(from, this.conversationalResponses.unknownOption.message);
+                }
+                break;
             
-      default:
-        await this.client.sendMessage(from, responses.unknown.message);
-        break;
+            case 2: // Después de elegir opción 2
+                await this.client.sendMessage(from, this.conversationalResponses.thanks.message);
+                await this.updatePatientResponse(contactName, from, message.body, 2); // Finalizar conversación        
+                await this.savePatientResponse(contactName, from, message.body, 0);
+                break;
+            
+            default:
+                await this.client.sendMessage(from, this.conversationalResponses.unknown.message); // Manejo de estado no esperado
+                break;
+        }
+    } finally {
+        // Liberar el bloqueo
+        this.processingLocks.set(from, false);
     }
   }
 
@@ -228,7 +257,7 @@ export class WhatsappService {
       data: {
         response: response,
         received_at: new Date(),
-        conversationState: conversationState,
+        conversationState: conversationState,  
       },
     });
   }
@@ -250,7 +279,7 @@ export class WhatsappService {
     const contactName = contact.pushname || contact.verifiedName;
     const lowerCaseBody = body.toLowerCase();
 
-    const responses = this.loadReminderResponses();
+    
 
     const {
       appointment_date: appointmentDate,
@@ -274,27 +303,18 @@ export class WhatsappService {
     });
 
     if (reminderState) {
-      if(reminderState.task_status === 2 && reminderState.reminder_state === 1){
-        await sendResponse(responses.thanks.message);
-        await this.updatePatientReminder(from, 2, 2);
+      if (reminderState.task_status === 2 && reminderState.reminder_state === 1) {
+        await this.handleRescheduledAppointment(from, this.reminderResponses);
         return;
       }
-      // Primer mensaje o recordatorio no iniciado
-      if (lowerCaseBody.includes('hola')) { 
-        await sendResponse(
-          responses.welcome.message
-            .replace('{contactName}', contactName || patientFullName)
-            .replace('{patientFullName}', patientFullName)
-            .replace('{appointmentDate}', this.convertToSpanishDate(appointmentDate))
-            .replace('{doctorName}', doctorName)
-        );
-        await sendResponse(responses.welcome.additionalMessage);
-        
-        // Actualizar el estado del recordatorio
-        await this.updatePatientReminder(from, 0, 1); // 1 indica que el saludo inicial se ha enviado      
+
+      if (lowerCaseBody.includes('hola')) {
+        await this.handleInitialGreeting(from, this.reminderResponses, contactName, patientFullName, appointmentDate, doctorName);
         return;
-      } else if(reminderState.reminder_state === 0) {
-        await sendResponse(responses.unknown.message);
+      }
+
+      if (reminderState.reminder_state === 0 && !lowerCaseBody.includes('hola')) {
+        await sendResponse(this.reminderResponses.unknown.message);
         return;
       }
     }
@@ -306,33 +326,76 @@ export class WhatsappService {
       case '1':
         newTaskStatus = 1; // Confirmed
         await sendResponse(
-          responses.confirmed.message
+          this.reminderResponses.confirmed.message
             .replace('{contactName}', contactName || patientFullName)
             .replace('{patientFullName}', patientFullName)
             .replace('{appointmentDate}', this.convertToSpanishDate(appointmentDate))
             .replace('{doctorName}', doctorName)
         );
-        await sendResponse(responses.confirmed.additionalMessage);
+        await sendResponse(this.reminderResponses.confirmed.additionalMessage);
         await this.updatePatientReminder(from, newTaskStatus, 2); // 2 indica que se ha recibido una respuesta
         break;
       case '2':
         newTaskStatus = 2; // Rescheduled
-        await sendResponse(responses.rescheduled.message);
-        await sendResponse(responses.additionalInformation.message);
+        await sendResponse(this.reminderResponses.rescheduled.message);
+        await sendResponse(this.reminderResponses.additionalInformation.message);
         await this.updatePatientReminder(from, newTaskStatus, 1); // 1 indica que la conversaciona continua
         break;
       case '3':
         newTaskStatus = 3; // Cancelled
-        await sendResponse(responses.cancelled.message);
-        await sendResponse(responses.cancelled.additionalMessage);
+        await sendResponse(this.reminderResponses.cancelled.message);
+        await sendResponse(this.reminderResponses.cancelled.additionalMessage);
         await this.updatePatientReminder(from, newTaskStatus, 2); // 2 indica que se ha recibido una respuesta
         break;
       default:        
-        await sendResponse(responses.invalid.message);
+        await sendResponse(this.reminderResponses.invalid.message);
         break;
     }
 
     // Update the patient reminder status
+  }
+
+  private async handleRescheduledAppointment(from: string, responses: any) {
+    await this.sendResponse(from, responses.thanks.message);
+    await this.updatePatientReminder(from, 2, 2);
+  }
+
+  private async handleInitialGreeting(
+    from: string, 
+    responses: any, 
+    contactName: string, 
+    patientFullName: string, 
+    appointmentDate: string, 
+    doctorName: string
+  ) {
+    const welcomeMessage = this.formatWelcomeMessage(
+      responses.welcome.message,
+      contactName,
+      patientFullName,
+      appointmentDate,
+      doctorName
+    );
+    await this.sendResponse(from, welcomeMessage);
+    await this.sendResponse(from, responses.welcome.additionalMessage);
+    await this.updatePatientReminder(from, 0, 1);
+  }
+
+  private formatWelcomeMessage(
+    template: string,
+    contactName: string,
+    patientFullName: string,
+    appointmentDate: string,
+    doctorName: string
+  ): string {
+    return template
+      .replace('{contactName}', contactName || patientFullName)
+      .replace('{patientFullName}', patientFullName)
+      .replace('{appointmentDate}', this.convertToSpanishDate(appointmentDate))
+      .replace('{doctorName}', doctorName);
+  }
+
+  private async sendResponse(to: string, message: string) {
+    await this.client.sendMessage(to, message);
   }
 
   // Actualizar el método updatePatientReminder para incluir el estado del recordatorio
