@@ -28,8 +28,8 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     const phoneNumber = localStorage.getItem('phoneNumber');
-    if(phoneNumber) setIsPhoneNumber(phoneNumber);
-    
+    if (phoneNumber) setIsPhoneNumber(phoneNumber);
+
     if (token) {
       try {
         const decodedUser = jwtDecode(token) as User;
@@ -61,10 +61,10 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
 
   const handleConfirmSend = async () => {
     if (!selectedMessage) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error('No token found');
@@ -99,19 +99,19 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
 
   return (
     <>
-      
+
       <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md">
         <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow-lg">
           <thead className="bg-blue-500 text-white">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Action</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Acción</th>
               {/* <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">ID</th> */}
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Patient Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Phone</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Message</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Appointment Date</th>
-              {/*<th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Doctor Name</th>*/}
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Creation Date</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Nombre del Paciente</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Teléfono</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Mensaje</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha de Cita</th>
+              {/*<th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Nombre del Doctor</th>*/}
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha de Creación</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
