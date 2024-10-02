@@ -38,6 +38,7 @@ const Login: React.FC = () => {
         setErrorMessage(response.data.error);
       } else {
         const { access_token } = response.data;
+        console.log(response.data)
         localStorage.setItem("access_token", access_token);
         navigate("/whatsapp-status");
       }
@@ -73,13 +74,20 @@ const Login: React.FC = () => {
           alt="Logo"
           className="flex h-14 w-auto mx-auto mt-4"
         />
-        <h1 className="text-center border-r-gray-900 text-xl font-semibold">WhatsappBot</h1>
+        <div className="flex items-center justify-center space-x-4 mt-4">
+          <img
+            src="/img/boticon.png"
+            alt="Bot Icon"
+            className="h-16 w-16" // Ajustar el tamaño de la imagen
+          />
+          <h1 className="text-center text-2xl font-semibold">WhatsappBot</h1>
+        </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="flex flex-col space-y-3">
             <div className="flex items-center space-x-2 text-gray-700 mt-4">
               <FaCircleUser className="text-2xl" />
               <label htmlFor="username" className="text-lg">
-                Username
+                Usuario
               </label>
             </div>
             <input
@@ -100,7 +108,7 @@ const Login: React.FC = () => {
             <div className="flex items-center space-x-2 text-gray-700">
               <RiLockPasswordFill className="text-2xl" />
               <label htmlFor="password" className="text-lg">
-                Password
+                Contraseña
               </label>
             </div>
             <input
@@ -135,10 +143,10 @@ const Login: React.FC = () => {
             {loading ? (
               <>
                 <FaSpinner className="inline-block mr-2 animate-spin" />
-                Accessing...
+                Accediendo...
               </>
             ) : (
-              "Login"
+              "Ingresar"
             )}
           </button>
         </form>
