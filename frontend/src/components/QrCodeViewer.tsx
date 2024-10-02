@@ -76,7 +76,7 @@ const QRCodeViewer: React.FC = () => {
               onClick={() => navigate("/pending-messages")}
               className="mb-6 px-6 py-3 bg-blue-500 text-white rounded-full shadow-md hover:bg-blue-600 hover:shadow-lg transition duration-300 ease-in-out"
             >
-              Go to Pending Messages
+              Ir a mensajes pendientes
             </button>
 
             {loading ? (
@@ -87,14 +87,13 @@ const QRCodeViewer: React.FC = () => {
               <div className="mt-4 text-center">
                 <QRCode value={qrCodeData} size={256} level="H" />
                 <p className="mt-4 text-gray-700 font-semibold">
-                  Scan this QR with your cellphone
-                </p>
+                  Escanea este código QR con tu móvil                </p>
                 <p className="mt-2 text-gray-600">
-                  QR Code expires in: {countdown} seconds
+                  El código QR caduca en: {countdown} segundos.
                 </p>
               </div>
             ) : (
-              <p className="text-gray-700 text-lg">No QR code available</p>
+              <p className="text-gray-700 text-lg">No hay código QR disponible</p>
             )}
           </div>
         </div>
