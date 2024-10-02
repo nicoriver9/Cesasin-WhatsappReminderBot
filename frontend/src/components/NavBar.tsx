@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
         localStorage.setItem("phoneNumber", phoneNumber);
       } catch (err) {
         console.error("Error fetching phone number:", err);
-        setPhoneNumber("Not authenticated");
+        setPhoneNumber("No autenticado");
       }
     };
 
@@ -67,7 +67,7 @@ const Navbar: React.FC = () => {
     fetchPhoneNumber();
 
     const intervalId = setInterval(fetchPhoneNumber, 30000);
-    
+
     return () => clearInterval(intervalId);
   }, []);
 
@@ -106,7 +106,7 @@ const Navbar: React.FC = () => {
             {userName} - 📱 {phoneNumber}
           </span>
         ) : (
-          <span>⌛ Waiting for QR code scan...</span>
+          <span>⌛ Esperando el escaneo del código QR...</span>
         )}
       </div>
       <div className="flex items-center space-x-4">
@@ -125,7 +125,7 @@ const Navbar: React.FC = () => {
               />
             </Switch>
             <span className="text-white text-sm">
-              Conversational mode {isConversationalMode ? "ON" : "OFF"}
+              Modo conversacional {isConversationalMode ? "ON" : "OFF"}
             </span>
           </>
         )}
@@ -133,7 +133,7 @@ const Navbar: React.FC = () => {
           className="flex items-center font-semibold text-white mx-3  px-4 py-2 rounded-full hover:bg-red-500 hover:text-white transition duration-200 ease-in-out focus:outline-none"
           onClick={handleLogout}
         >
-          <FiLogOut className="mr-2" /> Logout
+          <FiLogOut className="mr-2" /> Cerrar sesión
         </button>
       </div>
     </nav>
