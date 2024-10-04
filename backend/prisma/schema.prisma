@@ -68,6 +68,20 @@ model WhatsappMsg {
   completion_date        DateTime?                   // Fin Fecha
   completion_time        String?
   reminder_state         Int?     
+  appointmentReseverd    Boolean?    @default(false)  
+}
+
+model AppointmentReschedule {
+  reschedule_id         Int      @id @default(autoincrement())
+  whatsapp_msg_id       Int
+  patient_full_name     String   
+  patient_id            Int?     
+  patient_phone         String?    
+  message               String
+  doctor_name           String
+  new_appointment_date  DateTime?  
+  created_at            DateTime @default(now())
+  confirmed             Boolean  @default(false)
 }
 
 model PatientResponses {
@@ -79,7 +93,8 @@ model PatientResponses {
   doctor_name             String?    @db.VarChar(255)
   received_at             DateTime   @default(now())
   created_at              DateTime   @default(now())
-  conversationState       Int       @default(0)
+  conversationState       Int        @default(0)
+  appointmentReseverd     Boolean?   @default(false)
 }
 
 
