@@ -69,6 +69,7 @@ export class WhatsappService {
     });
 
     this.client.on("disconnected", async (reason) => {
+      console.log("client disconnected");
       this.clientStatus$.next("disconnected");
       await this.logUserAudit("disconnected", reason);
     });
@@ -97,11 +98,10 @@ export class WhatsappService {
           },
         });
 
-        console.log('reminderMessages',reminderMessages)
-
         if (!reminderMessages) {
           await this.handleConversationalMessage(message);
         } else {
+          //console.log('reminderMessages',reminderMessages)
           await this.handleReminderMessage(message, reminderMessages);
         }
       }
@@ -207,7 +207,10 @@ export class WhatsappService {
         });
       } catch (error) {
         this.logger.error(`Error fetching conversation state: ${error}`);
-        await this.client.sendMessage(from, "Error al procesar tu mensaje. Intenta de nuevo más tarde.");
+        await this.client.sendMessage(
+          from,
+          "Error al procesar tu mensaje. Intenta de nuevo más tarde."
+        );
         return;
       }
 
@@ -230,7 +233,10 @@ export class WhatsappService {
           });
         } catch (error) {
           this.logger.error(`Error fetching conversation state: ${error}`);
-          await this.client.sendMessage(from, "Error al procesar tu mensaje. Intenta de nuevo más tarde.");
+          await this.client.sendMessage(
+            from,
+            "Error al procesar tu mensaje. Intenta de nuevo más tarde."
+          );
           return;
         }
       }
@@ -238,10 +244,16 @@ export class WhatsappService {
       if (!conversationState || conversationState.conversationState === 0) {
         // Nuevo usuario o conversación no iniciada
         if (lowerCaseBody === this.expectedResponses[0]) {
-          await this.client.sendMessage(from, this.conversationalResponses.welcome.message);
+          await this.client.sendMessage(
+            from,
+            this.conversationalResponses.welcome.message
+          );
           await this.savePatientResponse(contactName, from, message.body, 1); // Iniciar conversación
         } else {
-          await this.client.sendMessage(from, this.conversationalResponses.unknown.message);
+          await this.client.sendMessage(
+            from,
+            this.conversationalResponses.unknown.message
+          );
         }
         return;
       }
@@ -282,8 +294,17 @@ export class WhatsappService {
           break;
 
         case 2: // Después de elegir opción 2
-          await this.client.sendMessage(from,this.conversationalResponses.thanks.message);
-          await this.updatePatientResponse(contactName, from, message.body, 2); // Finalizar conversación
+          await this.client.sendMessage(
+            from,
+            this.conversationalResponses.thanks.message
+          );
+          await this.updatePatientResponse(
+            contactName,
+            from,
+            message.body,
+            2,
+            true
+          ); // Finalizar conversación
           await this.savePatientResponse(contactName, from, message.body, 0);
           break;
 
@@ -321,7 +342,8 @@ export class WhatsappService {
     contactName: string,
     patientPhone: string,
     response: string,
-    conversationState: number
+    conversationState: number,
+    appointmentReseverd?: boolean
   ) {
     await this.prisma.patientResponses.updateMany({
       where: {
@@ -333,6 +355,7 @@ export class WhatsappService {
         response: response,
         received_at: new Date(),
         conversationState: conversationState,
+        appointmentReseverd: appointmentReseverd,
       },
     });
   }
@@ -391,8 +414,19 @@ export class WhatsappService {
     });
 
     if (reminderState) {
-      if (reminderState.task_status === 2 && reminderState.reminder_state === 1) {
-        await this.handleRescheduledAppointment(from, patientFullName, this.reminderResponses); // 2 - 2
+      if (
+        reminderState.task_status === 2 &&
+        reminderState.reminder_state === 1
+      ) {
+        await this.handleRescheduledAppointment(
+          from,
+          reminderState.doctor_name,
+          patientFullName,
+          this.reminderResponses,
+          reminderState.whatsapp_msg_id,
+          body
+        ); // 2 - 2
+        
         return;
       }
 
@@ -408,7 +442,11 @@ export class WhatsappService {
         return;
       }
 
-      if (reminderState.reminder_state === 0 && reminderState.task_status === 0 && !lowerCaseBody.includes("hola")) {
+      if (
+        reminderState.reminder_state === 0 &&
+        reminderState.task_status === 0 &&
+        !lowerCaseBody.includes("hola")
+      ) {
         await sendResponse(this.reminderResponses.unknown.message);
         return;
       }
@@ -435,19 +473,32 @@ export class WhatsappService {
             .replace("{doctorName}", doctorName)
         );
         await sendResponse(this.reminderResponses.confirmed.additionalMessage);
-        await this.updatePatientReminder(from, patientFullName, newTaskStatus, 2); // 2 indica que se ha recibido una respuesta
+        await this.updatePatientReminder(
+          from,
+          patientFullName,
+          newTaskStatus,
+          2
+        ); // 2 indica que se ha recibido una respuesta
         break;
       case "2":
+        console.log('case2 ')
         newTaskStatus = 2; // Rescheduled
         await sendResponse(this.reminderResponses.rescheduled.message);
-        await sendResponse(this.reminderResponses.additionalInformation.message);
-        await this.updatePatientReminder(from, patientFullName, newTaskStatus, 1); // 1 indica que la conversación continúa
+        await sendResponse(
+          this.reminderResponses.additionalInformation.message
+        );
+        await this.updatePatientReminder(
+          from,
+          patientFullName,
+          newTaskStatus,
+          1
+        ); // 1 indica que la conversación continúa
         break;
       case "3":
         newTaskStatus = 3; // Cancelled
         await sendResponse(this.reminderResponses.cancelled.message);
         await sendResponse(this.reminderResponses.cancelled.additionalMessage);
-        await this.updatePatientReminder(from, patientFullName, newTaskStatus, 2); // 2 indica que se ha recibido una respuesta
+        await this.updatePatientReminder(from,patientFullName,newTaskStatus,2); // 2 indica que se ha recibido una respuesta
         break;
       default:
         // Manejo de respuestas no reconocidas
@@ -457,9 +508,42 @@ export class WhatsappService {
     }
   }
 
-  private async handleRescheduledAppointment(from: string, patientFullName: string, responses: any) {
+  private async handleRescheduledAppointment(
+    from: string,
+    doctorName: string,
+    patientFullName: string,
+    responses: any,
+    whatsappMsgId: number,
+    body?: string,
+  ) {
     await this.sendResponse(from, responses.thanks.message);
-    await this.updatePatientReminder(from, patientFullName, 2, 2);
+    await this.updatePatientReminder(from, patientFullName, 2, 2, whatsappMsgId);
+    await this.saveAppointmentReschedule(from, patientFullName, doctorName, body, whatsappMsgId);
+    
+  }
+
+  private async saveAppointmentReschedule(
+    patientPhone: string,
+    patientFullName: string,
+    doctorName: string,
+    message: string,    
+    whatsappMsgId: number
+  ) {
+    try {
+      await this.prisma.appointmentReschedule.create({
+        data: {          
+          message: message,
+          patient_full_name: patientFullName,          
+          doctor_name: doctorName,
+          patient_phone: patientPhone,
+          created_at: new Date(),
+          whatsapp_msg_id: whatsappMsgId/* Aquí debes proporcionar el ID del mensaje de WhatsApp correspondiente */, // Añadir este campo
+        },
+      });
+      this.logger.log(`Appointment reschedule saved for ${patientPhone}`);
+    } catch (error) {
+      this.logger.error(`Error saving appointment reschedule: ${error}`);
+    }
   }
 
   private async handleInitialGreeting(
@@ -505,12 +589,14 @@ export class WhatsappService {
     patientPhone: string,
     patient_full_name: string,
     newTaskStatus: number,
-    reminderState: number
+    reminderState: number,
+    whatsappMsgId?: number
   ) {
     try {
-
+      
       const latestReminder = await this.prisma.whatsappMsg.findFirst({
-        where: {
+        where: {                   
+          whatsapp_msg_id: whatsappMsgId,
           patient_full_name:patient_full_name,
           patient_phone: patientPhone,
           task_status: { in: [0, 2] }, // Find the latest pending reminder or rescheduled one
@@ -519,6 +605,7 @@ export class WhatsappService {
           creation_date: 'desc',
         },
       });      
+      
       if (latestReminder) {
         const result = await this.prisma.whatsappMsg.update({
           where: {
@@ -529,7 +616,7 @@ export class WhatsappService {
             reminder_state: reminderState,
           },
         });
-        // console.log('result',result)
+      
       }
       this.logger.log(
         `Updated reminder status for ${patientPhone} to ${newTaskStatus}, reminder state: ${reminderState}`

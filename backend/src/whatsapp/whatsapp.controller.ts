@@ -171,19 +171,9 @@ export class WhatsappController {
   
   @UseGuards(JwtAuthGuard)
   @Get('messages-reschedule')
-  async getRescheduleMessages(@User() user: any) {
-    // Establecer el usuario actual para auditoría si es necesario
-    //this.whatsappService.setCurrentUserId(user.user_id);
-
-    try {
-      // Consultar los mensajes con task_status igual a 2 (Reprogramar cita)
-      const messages = await this.prisma.whatsappMsg.findMany({
-        where: {
-          task_status: 2,
-        },
-      });
-    
-      return  messages;
+  async getRescheduleMessages() {    
+    try {    
+      return await this.prisma.appointmentReschedule.findMany();    
     } catch (error) {
       return { message: 'Error retrieving reschedule messages', error: error.message };
     }
@@ -198,8 +188,8 @@ export class WhatsappController {
     try {
       // Consultar los registros de patientresponses con response igual a 2
       const messages = await this.prisma.patientResponses.findMany({
-        where: {
-          response: "2",
+        where: {          
+          appointmentReseverd: true,
         },
       });
       
