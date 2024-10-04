@@ -171,7 +171,7 @@ const ExcelViewer: React.FC = () => {
         attachment: `${attachment} at ${row["Hora"]}hs`,
         doctor: service.medical_service,
         patient_cel: Array.isArray(row["Teléfono"])
-          ? row["Teléfono"].map(() => `5492616689241@c.us`)
+          ? row["Teléfono"].map(() => `5492612547389@c.us`)
           //? row["Teléfono"].map((phone: string) => `${phone}@c.us`)
           : [],
       }))
@@ -270,7 +270,7 @@ const ExcelViewer: React.FC = () => {
               htmlFor="file-upload"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Upload Excel File
+              Subir archivo Excel
             </label>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
@@ -280,7 +280,7 @@ const ExcelViewer: React.FC = () => {
                     htmlFor="file-upload"
                     className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
                   >
-                    <span>Upload a file</span>
+                    <span>Subir un archivo</span>
                     <input
                       id="file-upload"
                       name="file-upload"
@@ -290,9 +290,9 @@ const ExcelViewer: React.FC = () => {
                       onChange={handleFileUpload}
                     />
                   </label>
-                  <p className="pl-1">or drag and drop</p>
+                  <p className="pl-1">o arrastrar y soltar</p>
                 </div>
-                <p className="text-xs text-gray-500">Excel files only</p>
+                <p className="text-xs text-gray-500">Solo archivos Excel</p>
               </div>
             </div>
           </div>
@@ -307,7 +307,7 @@ const ExcelViewer: React.FC = () => {
               {loading ? (
                 <>
                   <FaSpinner className="inline-block mr-2 animate-spin" />
-                  Sending Reminders...
+                  Enviando recordatorios...
                 </>
               ) : (
                 "Send WhatsApp Reminders"
@@ -318,7 +318,7 @@ const ExcelViewer: React.FC = () => {
             onClick={() => navigate("/pending-messages")}
             className="w-full mt-4 py-2 px-4 text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
           >
-            Go to Pending Messages
+            Ir a mensajes pendientes
           </button>
         </div>
 
