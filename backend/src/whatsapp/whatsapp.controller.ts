@@ -173,7 +173,11 @@ export class WhatsappController {
   @Get('messages-reschedule')
   async getRescheduleMessages() {    
     try {    
-      return await this.prisma.appointmentReschedule.findMany();    
+      return await this.prisma.appointmentReschedule.findMany({
+        where:{
+          confirmed: false
+        }
+      });    
     } catch (error) {
       return { message: 'Error retrieving reschedule messages', error: error.message };
     }
@@ -210,12 +214,11 @@ export class WhatsappController {
 
     try {
       // Buscar el paciente en whatsappMsg y patientResponses
-      const whatsappMsg = await this.prisma.whatsappMsg.findFirst({
+      const reschedule = await this.prisma.appointmentReschedule.findFirst({
         where: {
           patient_phone: body.patientPhone,
-          whatsapp_msg_id: body.patientId,          
-          task_status: 2,
-        },
+          whatsapp_msg_id: body.patientId,                    
+        }                
       });
 
       const patientResponse = await this.prisma.patientResponses.findFirst({
@@ -226,12 +229,12 @@ export class WhatsappController {
         },
       });
 
-      if (!whatsappMsg && !patientResponse) {
+      if (!reschedule && !patientResponse) {
         return { message: 'Patient not found or not eligible for rescheduling' };
       }
 
       // Obtener el número de teléfono del paciente
-      const phoneNumber = whatsappMsg?.patient_phone || patientResponse?.patient_phone;
+      const phoneNumber = reschedule?.patient_phone || patientResponse?.patient_phone;
 
       if (!phoneNumber) {
         return { message: 'Patient phone number not found' };
@@ -248,10 +251,10 @@ export class WhatsappController {
       await this.whatsappService.sendMessage(whatsappNumber, body.message);      
 
       // Actualizar el estado en whatsappMsg si existe
-      if (whatsappMsg) {
-        await this.prisma.whatsappMsg.update({
-          where: { whatsapp_msg_id: whatsappMsg.whatsapp_msg_id },
-          data: { task_status: 5 }, // Asumiendo que 5 significa "mensaje de reprogramación enviado"
+      if (reschedule) {
+        await this.prisma.appointmentReschedule.update({
+          where: { reschedule_id: reschedule.reschedule_id },
+          data: { confirmed: true }, // "mensaje de reprogramación enviado"
         });
       }
 

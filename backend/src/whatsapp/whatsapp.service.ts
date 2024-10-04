@@ -537,7 +537,8 @@ export class WhatsappService {
           doctor_name: doctorName,
           patient_phone: patientPhone,
           created_at: new Date(),
-          whatsapp_msg_id: whatsappMsgId/* Aquí debes proporcionar el ID del mensaje de WhatsApp correspondiente */, // Añadir este campo
+          whatsapp_msg_id: whatsappMsgId,
+          confirmed: false
         },
       });
       this.logger.log(`Appointment reschedule saved for ${patientPhone}`);
@@ -607,7 +608,7 @@ export class WhatsappService {
       });      
       
       if (latestReminder) {
-        const result = await this.prisma.whatsappMsg.update({
+        await this.prisma.whatsappMsg.update({
           where: {
             whatsapp_msg_id: latestReminder.whatsapp_msg_id,
           },
