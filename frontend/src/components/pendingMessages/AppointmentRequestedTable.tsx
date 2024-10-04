@@ -124,32 +124,40 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {responses.map((message, index) => (
-              <tr key={`${message.whatsapp_msg_id}-${index}`} className="hover:bg-gray-100 transition-colors duration-150">
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center">
-                  {isPhoneNumber.length > 0 && !isConversationalMode && (
+            {responses.length > 0 ? (
+              responses.map((message, index) => (
+                <tr key={`${message.whatsapp_msg_id}-${index}`} className="hover:bg-gray-100 transition-colors duration-150">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center">
+                    {isPhoneNumber.length > 0 && !isConversationalMode && (
+                      <button
+                        onClick={() => handleSendClick(message)}
+                        className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                      >
+                        <FaCommentDots />
+                      </button>
+                    )}
+                  </td>                
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{message.patient_full_name}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.patient_phone}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button
-                      onClick={() => handleSendClick(message)}
+                      onClick={() => handleShowAlert(message.response)} // Cambiado aquí
                       className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
                     >
-                      <FaCommentDots />
+                      Ver mensaje completo
                     </button>
-                  )}
-                </td>                
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{message.patient_full_name}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.patient_phone}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <button
-                    onClick={() => handleShowAlert(message.response)} // Cambiado aquí
-                    className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-                  >
-                    Ver mensaje completo
-                  </button>
+                  </td>
+                  
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(message.created_at).toLocaleString()}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                  No hay turnos solicitados
                 </td>
-                
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(message.created_at).toLocaleString()}</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

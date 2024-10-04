@@ -132,33 +132,41 @@ const MessagesRescheduleTable: React.FC<{ messages: any[], refreshMessages: () =
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {messages.map((message) => (
-              <tr key={message.whatsapp_msg_id} className="hover:bg-gray-100 transition-colors duration-150">
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center">
-                  {isPhoneNumber.length > 0 && !isConversationalMode && (
-                    <button
-                      onClick={() => handleOpenMessageModal(message)}
+            {messages.length > 0 ? (
+              messages.map((message) => (
+                <tr key={message.whatsapp_msg_id} className="hover:bg-gray-100 transition-colors duration-150">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center">
+                    {isPhoneNumber.length > 0 && !isConversationalMode && (
+                      <button
+                        onClick={() => handleOpenMessageModal(message)}
+                        className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                      >
+                        <FaCommentDots />
+                      </button>
+                    )}
+                  </td>                
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{message.patient_full_name}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.patient_phone}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
+                    {/* {message.message} */}
+                  <button
+                      onClick={() => handleShowAlert(message.message)} // Cambiado aquí
                       className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
                     >
-                      <FaCommentDots />
+                      Ver mensaje completo
                     </button>
-                  )}
-                </td>                
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{message.patient_full_name}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.patient_phone}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
-                  {/* {message.message} */}
-                <button
-                    onClick={() => handleShowAlert(message.message)} // Cambiado aquí
-                    className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-                  >
-                    Ver mensaje completo
-                  </button>
-                </td>                
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.doctor_name}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(message.created_at).toLocaleString()}</td>
+                  </td>                
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.doctor_name}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(message.created_at).toLocaleString()}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                  No hay turnos reprogramados
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
