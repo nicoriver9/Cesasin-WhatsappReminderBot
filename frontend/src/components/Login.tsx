@@ -95,7 +95,7 @@ const Login: React.FC = () => {
               id="username"
               className={`p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.username ? "border-red-500" : "border-gray-300"
                 }`}
-              {...register("username", { required: "Username is required" })}
+              {...register("username", { required: "Usuario es requerido" })}
               autoFocus
             />
             {errors.username && (
@@ -116,7 +116,7 @@ const Login: React.FC = () => {
               id="password"
               className={`p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.password ? "border-red-500" : "border-gray-300"
                 }`}
-              {...register("password", { required: "Password is required" })}
+              {...register("password", { required: "La contraseña es requerida" })}
             />
             <button
               type="button"

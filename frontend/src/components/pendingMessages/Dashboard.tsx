@@ -1,8 +1,8 @@
 // Dashboard.tsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import MessagesRescheduleTable from "./MessagesRescheduleTable";
-import PatientResponsesTable from "./PatientResponsesTable";
+import MessagesRescheduleTable from "./AppointmentReschedulesTable";
+import PatientResponsesTable from "./AppointmentRequestedTable";
 import Dropdown from "./utils/Dropdown";
 import { FaChevronLeft } from "react-icons/fa"; // Font Awesome icon for navigation
 import Navbar from "../NavBar";
@@ -93,17 +93,17 @@ const Dashboard: React.FC = () => {
 
       <div className="container mx-auto p-4">
         <h2 className="text-2xl font-bold text-white mb-4">
-          Pending Messages Dashboard
+          Tablero de mensajes pendientes
         </h2>
         <div className="space-y-4">
           {/* Messages Reschedule Section */}
           <Dropdown
-            title="Messages Reschedule"
+            title="Turnos reprogramados"
             isOpen={openDropdown === "messages"}
             onToggle={() => handleDropdownToggle("messages")}
           >
             {loadingMessages ? (
-              <p>Loading messages...</p>
+              <p>Cargando mensajes...</p>
             ) : (
               <MessagesRescheduleTable
                 messages={messages}
@@ -114,12 +114,12 @@ const Dashboard: React.FC = () => {
 
           {/* Patient Responses Section */}
           <Dropdown
-            title="Patient Responses"
+            title="Turnos solicitados"
             isOpen={openDropdown === "responses"}
             onToggle={() => handleDropdownToggle("responses")}
           >
             {loadingResponses ? (
-              <p>Loading responses...</p>
+              <p>Cargando mensajes...</p>
             ) : (
               <PatientResponsesTable
                 responses={responses}

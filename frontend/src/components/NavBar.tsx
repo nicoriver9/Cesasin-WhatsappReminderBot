@@ -40,6 +40,7 @@ const Navbar: React.FC = () => {
       } catch (err) {
         console.error("Error fetching phone number:", err);
         setPhoneNumber("No autenticado");
+        navigate('/');
       }
     };
 
@@ -57,6 +58,7 @@ const Navbar: React.FC = () => {
           );
         } catch (error) {
           console.error("Error initializing conversation mode:", error);
+          navigate('/');
         }
       } else if (isConversationalMode === false) {
         setIsConversationalMode(false);
