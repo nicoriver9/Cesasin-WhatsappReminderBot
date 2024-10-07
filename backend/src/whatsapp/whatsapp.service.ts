@@ -90,7 +90,7 @@ export class WhatsappService {
             task_status: { in: [0, 2] },
             reminder_state: { not: 2 },
             appointment_date: {
-              lt: currentDate, // Filtra para que la fecha sea menor a la fecha actual
+              gt: currentDate, // Filtra para que la fecha del turno sea mayor a la fecha actual'
             },
           },
           orderBy: {
