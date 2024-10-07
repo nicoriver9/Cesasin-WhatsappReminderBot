@@ -261,7 +261,7 @@ const ExcelViewer: React.FC = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-center mb-8">
-          Turnos del dia (RAS System)
+          Turnos del dia (Sistema RAS)
         </h1>
 
         <div className="max-w-xl mx-auto bg-white rounded-lg shadow-md p-6">
@@ -310,7 +310,7 @@ const ExcelViewer: React.FC = () => {
                   Enviando recordatorios...
                 </>
               ) : (
-                "Send WhatsApp Reminders"
+                "Enviar recordatorios de WhatsApp"
               )}
             </button>
           )}
