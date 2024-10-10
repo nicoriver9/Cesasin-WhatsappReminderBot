@@ -72,6 +72,7 @@ export class WhatsappService {
       console.log("client disconnected");
       this.clientStatus$.next("disconnected");
       await this.logUserAudit("disconnected", reason);
+      this.clearAuthAndCacheFolders();
     });
 
     this.client.on("message", async (message: Message) => {
@@ -107,9 +108,12 @@ export class WhatsappService {
       }
     });
 
+    
+
     this.conversationalResponses = this.loadConversationalResponses();
     this.reminderResponses = this.loadReminderResponses();
 
+    this.clearAuthAndCacheFolders();
     this.client.initialize();
   }
 
@@ -703,4 +707,16 @@ export class WhatsappService {
   private getIPAddress(): string | null {
     return null;
   }
+
+  private clearAuthAndCacheFolders() {
+    const fs = require('fs');
+    const path = require('path');
+    const authFolderPath = path.join(__dirname, '..', '..', '.wwebjs_auth', 'session', 'Default');
+    const cacheFolderPath = path.join(__dirname, '..', '..', '.wwebjs_cache');
+  
+    fs.rm(authFolderPath, { recursive: true, force : true });
+  
+    fs.rm(cacheFolderPath, { recursive: true, force: true });
+  }
+
 }
