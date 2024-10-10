@@ -160,6 +160,9 @@ const ExcelViewer: React.FC = () => {
     const dateString: string = excelData[0][0];
     const [day, month, year] = dateString.replace("Turnos del día ", "").split("/").map(Number);
     const excelDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+    if (excelDate.toISOString().split("T")[0] !== new Date().toISOString().split("T")[0]) {
+      alert("El archivo 'Turnos del día' no coincide con la fecha actual. Por favor, asegúrate de que el archivo está actualizado.");
+    }
     // Calculate the next business day
     const nextBusinessDay = getNextBusinessDay(excelDate);
     const attachment = nextBusinessDay.toISOString().split("T")[0]; // Format as YYYY-MM-DD
@@ -171,13 +174,13 @@ const ExcelViewer: React.FC = () => {
         attachment: `${attachment} at ${row["Hora"]}hs`,
         doctor: service.medical_service,
         patient_cel: Array.isArray(row["Teléfono"])
-          ? row["Teléfono"].map(() => `5492612547389@c.us`)
-          //? row["Teléfono"].map((phone: string) => `${phone}@c.us`)
+          // ? row["Teléfono"].map(() => `5492612547389@c.us`)
+          ? row["Teléfono"].map((phone: string) => `${phone}@c.us`)
           : [],
       }))
     );
     setFormattedPatients(patientsArray);
-    console.log("Formatted Patients:", patientsArray);
+    // console.log("Formatted Patients:", patientsArray);
   };
 
   const getNextBusinessDay = (date: Date): Date => {
