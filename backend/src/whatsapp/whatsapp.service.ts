@@ -72,7 +72,7 @@ export class WhatsappService {
       console.log("client disconnected");
       this.clientStatus$.next("disconnected");
       await this.logUserAudit("disconnected", reason);
-      this.clearAuthAndCacheFolders();
+      //this.clearAuthAndCacheFolders();
     });
 
     this.client.on("message", async (message: Message) => {
@@ -113,7 +113,7 @@ export class WhatsappService {
     this.conversationalResponses = this.loadConversationalResponses();
     this.reminderResponses = this.loadReminderResponses();
 
-    this.clearAuthAndCacheFolders();
+    //this.clearAuthAndCacheFolders();
     this.client.initialize();
   }
 
