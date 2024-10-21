@@ -37,8 +37,7 @@ const Login: React.FC = () => {
       if (response.data.error) {
         setErrorMessage(response.data.error);
       } else {
-        const { access_token } = response.data;
-        console.log(response.data)
+        const { access_token } = response.data;        
         localStorage.setItem("access_token", access_token);
         navigate("/whatsapp-status");
       }

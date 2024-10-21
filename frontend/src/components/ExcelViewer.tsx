@@ -1,6 +1,6 @@
 // ExcelViewer.tsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { json, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import Navbar from "./NavBar"; // Importar el componente Navbar
@@ -77,85 +77,87 @@ const ExcelViewer: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-          header: 1,
-        }) as any[][];
 
-        if (!isValidExcelFormat(jsonData)) {
-          alert(
-            "El archivo Excel cargado no se corresponde al formato exportado por el sistema RAS. Por favor, verifique el archivo e intente nuevamente."
-          );
-          return;
-        }
+const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+      }) as any[][];
 
-        setExcelData(jsonData);
+      if (!isValidExcelFormat(jsonData)) {
+        alert(
+          "El archivo Excel cargado no se corresponde al formato exportado por el sistema RAS. Por favor, verifique el archivo e intente nuevamente."
+        );
+        return;
+      }
 
-        const services: MedicalService[] = [];
-        let i = 0;
+      setExcelData(jsonData);
 
-        while (i < jsonData.length) {
-          const row = jsonData[i];
-          const nonEmptyCells = row.filter(
-            (cell) => cell !== undefined && cell !== null && cell !== ""
-          );
+      const services: MedicalService[] = [];
+      let i = 0;
 
-          if (nonEmptyCells.length === 1) {
-            const serviceName = nonEmptyCells[0] as string;
-            i++;
+      while (i < jsonData.length) {
+        const row = jsonData[i];
+        const nonEmptyCells = row.filter(
+          (cell) => cell !== undefined && cell !== null && cell !== ""
+        );
 
-            const table: Record<string, any>[] = [];
-            const headers = jsonData[i];
+        if (nonEmptyCells.length === 1 && typeof row[0] === 'string' && nonEmptyCells.length === 1 && !row[0].includes('Turnos del día')) {
+          const serviceName = nonEmptyCells[0] as string;
+          i++;
 
-            i++;
-            while (
-              i < jsonData.length &&
-              jsonData[i].some(
-                (cell) => cell !== undefined && cell !== null && cell !== ""
-              )
-            ) {
-              const rowData = jsonData[i];
-              const record: Record<string, any> = {};
+          const table: Record<string, any>[] = [];
+          const headers = jsonData[i];
 
-              headers.forEach((header, index) => {
-                if (header === "Teléfono") {
-                  record[header] = rowData[index]
-                    ? rowData[index].toString().match(/\b\d{7,}\b/g) || []
-                    : [];
-                } else {
-                  record[header] = rowData[index];
-                }
-              });
+          i++;
+          while (
+            i < jsonData.length &&
+            jsonData[i].some(
+              (cell) => cell !== undefined && cell !== null && cell !== ""
+            )
+          ) {
+            const rowData = jsonData[i];
+            const record: Record<string, any> = {};
 
-              table.push(record);
-              i++;
-            }
+            headers.forEach((header, index) => {
+              if (header === "Teléfono") {
+                record[header] = rowData[index]
+                  ? rowData[index].toString().match(/\b\d{7,}\b/g) || []
+                  : [];
+              } else {
+                record[header] = rowData[index];
+              }
+            });
 
-            services.push({ medical_service: serviceName, table });
-          } else {
+            table.push(record);
             i++;
           }
-        }
 
-        //setMedicalServices(services);
-        generatePatientData(services, jsonData);
-      };
-      reader.readAsArrayBuffer(file);
-    }
-  };
+          services.push({ medical_service: serviceName, table });
+        } else {
+          i++;
+        }
+      }
+
+      //setMedicalServices(services);
+      generatePatientData(services, jsonData);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+};
 
   const generatePatientData = (
     services: MedicalService[],
     excelData: any[][]
   ) => {
+    // console.log(services)
     // Extract the date from the first row
     const dateString: string = excelData[0][0];
     const [day, month, year] = dateString.replace("Turnos del día ", "").split("/").map(Number);
@@ -168,7 +170,7 @@ const ExcelViewer: React.FC = () => {
     const attachment = nextBusinessDay.toISOString().split("T")[0]; // Format as YYYY-MM-DD
 
     // const today = new Date().toISOString().split("T")[0];
-    const patientsArray = services.flatMap((service) =>
+    const patientsArray = services.flatMap((service) =>      
       service.table.map((row) => ({
         patient_fullname: `${row["Nombre"]} ${row["Apellido"]}`,
         attachment: `${attachment} at ${row["Hora"]}hs`,
@@ -178,9 +180,9 @@ const ExcelViewer: React.FC = () => {
           ? row["Teléfono"].map((phone: string) => `${phone}@c.us`)
           : [],
       }))
-    );
+  );
     setFormattedPatients(patientsArray);
-    // console.log("Formatted Patients:", patientsArray);
+    console.log("Formatted Patients:", patientsArray);
   };
 
   const getNextBusinessDay = (date: Date): Date => {
