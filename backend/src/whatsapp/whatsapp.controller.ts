@@ -59,6 +59,7 @@ export class WhatsappController {
 
     for (const reminder of reminders) {
       const { patient_fullname, attachment, doctor, patient_cel } = reminder;
+
     
       const reminderMessages = this.loadReminderMessage();
       const welcomeMessage = reminderMessages.welcome.message;
@@ -79,7 +80,7 @@ export class WhatsappController {
       }
 
       for (const phone of patient_cel) {
-        try {
+        try {          
           await this.whatsappService.sendMessage(phone, message, messageOptions);
                     
           const [datePart, timePart] = attachment.split(' at ');
@@ -97,7 +98,7 @@ export class WhatsappController {
             creation_date: new Date(),
             creation_time: new Date().toLocaleTimeString(),
             creation_user: user.username,
-            reminder_state: 0,
+            reminder_state: 1,
           });
 
           userAuditData.push({
@@ -106,6 +107,8 @@ export class WhatsappController {
             details: `Message: "${message}"`,
             ip_address: this.getIPAddress(request),
           });
+
+
         } catch (error) {
           console.log(`Failed to send message to ${phone}:`, error);
         }

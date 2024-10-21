@@ -72,7 +72,7 @@ export class WhatsappService {
       console.log("client disconnected");
       this.clientStatus$.next("disconnected");
       await this.logUserAudit("disconnected", reason);
-      //this.clearAuthAndCacheFolders();
+      //  this.clearAuthAndCacheFolders();
     });
 
     this.client.on("message", async (message: Message) => {
@@ -485,7 +485,7 @@ export class WhatsappService {
         ); // 2 indica que se ha recibido una respuesta
         break;
       case "2":
-        console.log('case2 ')
+        
         newTaskStatus = 2; // Rescheduled
         await sendResponse(this.reminderResponses.rescheduled.message);
         await sendResponse(
