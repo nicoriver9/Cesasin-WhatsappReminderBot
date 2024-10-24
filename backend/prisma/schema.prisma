@@ -84,6 +84,30 @@ model AppointmentReschedule {
   confirmed             Boolean  @default(false)
 }
 
+model ConfirmedAppointment {
+  confirmed_appointment_id Int      @id @default(autoincrement())
+  whatsapp_msg_id          Int
+  patient_full_name        String   
+  patient_id               Int?     
+  patient_phone            String?  
+  doctor_name              String
+  appointment_date         DateTime  
+  created_at               DateTime @default(now())
+  confirmation_date        DateTime @default(now())
+}
+
+model CancelledAppointment {
+  cancelled_appointment_id Int      @id @default(autoincrement())
+  whatsapp_msg_id          Int
+  patient_full_name        String   
+  patient_id               Int?     
+  patient_phone            String?  
+  doctor_name              String
+  cancellation_date        DateTime  @default(now())
+  reason                   String?
+  created_at               DateTime  @default(now())
+}
+
 model PatientResponses {
   response_id             Int       @id @default(autoincrement())
   patient_full_name       String?    @db.VarChar(255)
