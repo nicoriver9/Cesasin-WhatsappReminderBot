@@ -22,22 +22,6 @@ const ExcelViewer: React.FC = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
   const { setIsConversationalMode } = useConversationModeStore();
 
-  useEffect(() => {
-    const checkClientStatus = async () => {
-      try {
-        await axios.get(
-          `${apiUrl}/api/whatsapp/phone-number`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-      } catch (err) {
-        navigate("/");
-      }
-    };
-
-  }, [navigate]);
 
   const activeReminderMode = async () => {
     try {
@@ -98,7 +82,9 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         return;
       }
 
-      setExcelData(jsonData);
+      setExcelData(jsonData.map(row => 
+        row.map(cell => cell !== undefined && cell !== null && cell !== "" ? cell : "-") // Cambiado aquí
+      ));
 
       const services: MedicalService[] = [];
       let i = 0;
@@ -106,7 +92,9 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       while (i < jsonData.length) {
         const row = jsonData[i];
         const nonEmptyCells = row.filter(
-          (cell) => cell !== undefined && cell !== null && cell !== ""
+          (cell) => cell !== undefined 
+          // && cell !== null 
+          // && cell !== ""
         );
 
         if (nonEmptyCells.length === 1 && typeof row[0] === 'string' && nonEmptyCells.length === 1 && !row[0].includes('Turnos del día')) {
@@ -120,7 +108,9 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           while (
             i < jsonData.length &&
             jsonData[i].some(
-              (cell) => cell !== undefined && cell !== null && cell !== ""
+              (cell) => cell !== undefined 
+              // && cell !== null 
+              // && cell !== ""
             )
           ) {
             const rowData = jsonData[i];
@@ -132,7 +122,9 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   ? rowData[index].toString().match(/\b\d{7,}\b/g) || []
                   : [];
               } else {
+                // Asignar un guion si la celda está vacía
                 record[header] = rowData[index];
+                  
               }
             });
 
@@ -146,7 +138,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         }
       }
 
-      //setMedicalServices(services);
+      
       generatePatientData(services, jsonData);
     };
     reader.readAsArrayBuffer(file);
@@ -162,8 +154,9 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateString: string = excelData[0][0];
     const [day, month, year] = dateString.replace("Turnos del día ", "").split("/").map(Number);
     const excelDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
-    if (excelDate.toISOString().split("T")[0] !== new Date().toISOString().split("T")[0]) {
-      alert("El archivo 'Turnos del día' no coincide con la fecha actual. Por favor, asegúrate de que el archivo está actualizado.");
+    
+    if (excelDate.toISOString().split("T")[0] <= new Date().toISOString().split("T")[0]) {
+      alert("El archivo 'Turnos del día' no coincide con la fecha de mañana. Por favor, asegúrate de que el archivo está actualizado.");
     }
     // Calculate the next business day
     const nextBusinessDay = getNextBusinessDay(excelDate);
@@ -171,16 +164,26 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
     // const today = new Date().toISOString().split("T")[0];
     const patientsArray = services.flatMap((service) =>      
-      service.table.map((row) => ({
-        patient_fullname: `${row["Nombre"]} ${row["Apellido"]}`,
-        attachment: `${attachment} at ${row["Hora"]}hs`,
-        doctor: service.medical_service,
-        patient_cel: Array.isArray(row["Teléfono"])
-          // ? row["Teléfono"].map(() => `5492612547389@c.us`)
-          ? row["Teléfono"].map((phone: string) => `${phone}@c.us`)
-          : [],
-      }))
+      service.table.map((row, rowIndex) => { // Agregar rowIndex como segundo argumento
+        // Validar que todos los campos necesarios estén presentes
+        if (!row["Nombre"] || !row["Apellido"] || !row["Hora"] || !Array.isArray(row["Teléfono"]) || row["Teléfono"].length === 0) {
+          alert(`Faltan campos necesarios en la fila ${rowIndex + 1} del paciente. Por favor, verifica el archivo. Se obviará esa fila`); // Incluir el número de fila
+          return null; // Retornar null si falta algún campo
+        }
+        else {
+          return {
+            patient_fullname: `${row["Nombre"]} ${row["Apellido"]}`,
+            attachment: `${attachment} at ${row["Hora"]}hs`,
+            doctor: service.medical_service,
+            patient_cel: row["Teléfono"].map((phone: string) => `${phone}@c.us`),
+            // patient_cel: row["Teléfono"].map((phone: string) => `5492616689241@c.us`),
+          };
+        }
+        
+      }).filter(row => row !== null) // Filtrar los nulls
   );
+
+  
     setFormattedPatients(patientsArray);
     console.log("Formatted Patients:", patientsArray);
   };
@@ -250,13 +253,16 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       );
       setExcelData([]);
       setFormattedPatients([]);
-      alert("Reminders sent successfully!");
+      startConversationMode();
+      alert("Recordatorios enviados exitosamente!");
     } catch (err) {
       console.error("Error sending reminders:", err);
-      alert("Failed to send reminders.");
+      alert("Error al enviar los recordatorios.");
       navigate('/');
     } finally {
       await startConversationMode();
+      setExcelData([]);
+      setFormattedPatients([]);
       setLoading(false);
     }
   };
@@ -342,7 +348,9 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               <tbody>
                 {excelData.map((row, rowIndex) => {
                   const nonEmptyCells = row.filter(
-                    (cell) => cell !== undefined && cell !== null && cell !== ""
+                    (cell) => cell !== undefined 
+                     && cell !== null 
+                     && cell !== ""
                   );
                   const isMedicalSpecialty = nonEmptyCells.length === 1;
 

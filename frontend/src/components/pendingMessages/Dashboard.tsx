@@ -32,6 +32,10 @@ const Dashboard: React.FC = () => {
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [loadingResponses, setLoadingResponses] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [confirmedAppointments, setConfirmedAppointments] = useState<any[]>([]);
+  const [loadingConfirmed, setLoadingConfirmed] = useState(true);
+  const [cancelledAppointments, setCancelledAppointments] = useState<any[]>([]);
+  const [loadingCancelled, setLoadingCancelled] = useState(true);
   const apiUrl = import.meta.env.VITE_API_URL;
   const token = localStorage.getItem("access_token");
 
@@ -67,9 +71,45 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const fetchConfirmedAppointments = async () => {
+    setLoadingConfirmed(true); // Iniciar carga
+    try {
+      const response = await axios.get(
+        `${apiUrl}/api/whatsapp/confirmed-appointments`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setConfirmedAppointments(response.data); // Guardar datos
+    } catch (error) {
+      console.error("Error fetching confirmed appointments:", error);
+    } finally {
+      setLoadingConfirmed(false); // Finalizar carga
+    }
+  };
+
+  const fetchCancelledAppointments = async () => {
+    setLoadingCancelled(true); // Iniciar carga
+    try {
+      const response = await axios.get(
+        `${apiUrl}/api/whatsapp/cancelled-appointments`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setCancelledAppointments(response.data); // Guardar datos
+    } catch (error) {
+      console.error("Error fetching cancelled appointments:", error);
+    } finally {
+      setLoadingCancelled(false); // Finalizar carga
+    }
+  };
+
   useEffect(() => {
     fetchMessages();
     fetchResponses();
+    fetchConfirmedAppointments();
+    fetchCancelledAppointments();
   }, [apiUrl]);
 
   const handleDropdownToggle = (dropdown: string) => {
@@ -103,7 +143,7 @@ const Dashboard: React.FC = () => {
             onToggle={() => handleDropdownToggle("messages")}
           >
             {loadingMessages ? (
-              <p>Cargando mensajes...</p>
+              <p>Cargando turnos reprogramados...</p>
             ) : (
               <MessagesRescheduleTable
                 messages={messages}
@@ -119,12 +159,58 @@ const Dashboard: React.FC = () => {
             onToggle={() => handleDropdownToggle("responses")}
           >
             {loadingResponses ? (
-              <p>Cargando mensajes...</p>
+              <p>Cargando turnos solicitados...</p>
             ) : (
               <PatientResponsesTable
                 responses={responses}
                 refreshResponses={fetchResponses}
               />
+            )}
+          </Dropdown>
+
+          {/* Confirmed Appointments Section */}
+          <Dropdown
+            title="Turnos confirmados"
+            isOpen={openDropdown === "confirmed"}
+            onToggle={() => handleDropdownToggle("confirmed")}
+          >
+            {loadingConfirmed ? (
+              <p>Cargando turnos confirmadas...</p>
+            ) : (
+              <div>
+                {confirmedAppointments.length > 0 ? (
+                  confirmedAppointments.map((appointment) => (
+                    <div key={appointment.confirmed_appointment_id}>
+                      <p>{appointment.patient_full_name} - {appointment.appointment_date}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No hay turnos confirmados.</p>
+                )}
+              </div>
+            )}
+          </Dropdown>
+
+          {/* Cancelled Appointments Section */}
+          <Dropdown
+            title="Turnos cancelados"
+            isOpen={openDropdown === "cancelled"}
+            onToggle={() => handleDropdownToggle("cancelled")}
+          >
+            {loadingCancelled ? (
+              <p>Cargando turnos canceladas...</p>
+            ) : (
+              <div>
+                {cancelledAppointments.length > 0 ? (
+                  cancelledAppointments.map((appointment) => (
+                    <div key={appointment.cancelled_appointment_id}>
+                      <p>{appointment.patient_full_name} - {appointment.cancellation_date}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No hay turnos cancelados.</p>
+                )}
+              </div>
             )}
           </Dropdown>
         </div>

@@ -13,9 +13,9 @@ const Navbar: React.FC = () => {
     useConversationModeStore();
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
+  const token = localStorage.getItem("access_token");
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
@@ -26,7 +26,20 @@ const Navbar: React.FC = () => {
       }
     }
 
+    const fetchWhatsAppModeStatus = async () => {
+      try {
+        const response = await axios.get(`${apiUrl}/api/whatsapp-mode/status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const { isActive } = response.data; // Extrae isActive de la respuesta
+        setIsConversationalMode(isActive); // Modifica el estado según isActive
+      } catch (error) {
+        console.error("Error fetching WhatsApp mode status:", error);
+      }
+    };
+
     const fetchPhoneNumber = async () => {
+      
       try {
         const response = await axios.get(
           `${apiUrl}/api/whatsapp/phone-number`,
@@ -36,7 +49,7 @@ const Navbar: React.FC = () => {
         );
         const { phoneNumber } = response.data;
         setPhoneNumber(phoneNumber ? phoneNumber : false);
-        localStorage.setItem("phoneNumber", phoneNumber);
+        localStorage.setItem("phoneNumber", phoneNumber);        
       } catch (err) {
         console.error("Error fetching phone number:", err);
         setPhoneNumber("No autenticado");
@@ -44,33 +57,17 @@ const Navbar: React.FC = () => {
       }
     };
 
-    const initializeMode = async () => {
-      if (isConversationalMode === true) {
-        setIsConversationalMode(true);
-
-        try {
-          await axios.post(
-            `${apiUrl}/api/whatsapp-mode/start-conversation`,
-            {},
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-        } catch (error) {
-          console.error("Error initializing conversation mode:", error);
-          navigate('/');
-        }
-      } else if (isConversationalMode === false) {
-        setIsConversationalMode(false);
-      }
-    };
-
-    initializeMode();
+    // Llama a la nueva función para obtener el estado del modo
+    fetchWhatsAppModeStatus();
     fetchPhoneNumber();
 
-    const intervalId = setInterval(fetchPhoneNumber, 30000);
+    const intervalWhatsAppMode = setInterval(fetchWhatsAppModeStatus, 5000); // Ejecuta cada 5 segundos
+    const intervalPhoneNumber = setInterval(fetchPhoneNumber, 12000); // Ejecuta cada 12 segundos
 
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalWhatsAppMode); // Limpia el intervalo de WhatsApp mode
+      clearInterval(intervalPhoneNumber); // Limpia el intervalo de phone number
+    }; 
   }, []);
 
   const handleToggleConversationalMode = async () => {
