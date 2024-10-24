@@ -1,11 +1,12 @@
 {
     "welcome": {
-        "message": "👋 Hola, este es un recordatorio del turno del paciente {patient_fullname} el 📅 {attachment} con el Dr./Dra. {doctor}.",
-        "additionalMessage": "Por favor, elija una opción:",
+        "message": "Hola, este es un recordatorio del turno del paciente {patient_fullname} el {attachment} con {doctor}.",
+        "additionalMessage": "Por favor, escriba 'Hola' para ver las opciones disponibles",
+        "additionalOptionsMessage": "Por favor, elija una opción:",
         "options": {
-            "1": "✅ Confirmar cita",
-            "2": "🔄 Reprogramar cita",
-            "3": "❌ Cancelar cita"
+            "1": "Confirmar cita",
+            "2": "Reprogramar cita",
+            "3": "Cancelar cita"
         }
     }
 }

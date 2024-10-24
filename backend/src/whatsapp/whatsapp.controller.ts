@@ -64,7 +64,7 @@ export class WhatsappController {
       const reminderMessages = this.loadReminderMessage();
       const welcomeMessage = reminderMessages.welcome.message;
       const additionalMessage = reminderMessages.welcome.additionalMessage;
-      const options = reminderMessages.welcome.options;
+      // const options = reminderMessages.welcome.options;
       
       // Convertir la fecha al formato español
       const spanishDate = this.convertToSpanishDate(attachment);
@@ -74,10 +74,10 @@ export class WhatsappController {
         .replace('{attachment}', spanishDate)
         .replace('{doctor}', doctor);
 
-      let messageOptions = additionalMessage + "\n";
-      for (const [key, value] of Object.entries(options)) {
-        messageOptions += `${key}. ${value}\n`;
-      }
+      let messageOptions = "\n" + additionalMessage ;
+      // for (const [key, value] of Object.entries(options)) {
+      //   messageOptions += `${key}. ${value}\n`;
+      // }
 
       for (const phone of patient_cel) {
         try {          
@@ -98,7 +98,7 @@ export class WhatsappController {
             creation_date: new Date(),
             creation_time: new Date().toLocaleTimeString(),
             creation_user: user.username,
-            reminder_state: 1,
+            reminder_state: 0,
           });
 
           userAuditData.push({
@@ -286,7 +286,25 @@ export class WhatsappController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('confirmed-appointments')
+  async getConfirmedAppointments() {
+    try {
+      return await this.prisma.confirmedAppointment.findMany();
+    } catch (error) {
+      return { message: 'Error retrieving confirmed appointments', error: error.message };
+    }
+  }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('cancelled-appointments')
+  async getCancelledAppointments() {
+    try {
+      return await this.prisma.cancelledAppointment.findMany();
+    } catch (error) {
+      return { message: 'Error retrieving cancelled appointments', error: error.message };
+    }
+  }
 
   private getIPAddress(request: Request): string | null {
     // Primero intenta obtener la IP desde el encabezado 'x-forwarded-for'

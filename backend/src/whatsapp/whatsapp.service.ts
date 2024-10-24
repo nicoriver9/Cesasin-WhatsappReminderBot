@@ -52,14 +52,14 @@ export class WhatsappService {
       if (this.clientInfo) {
         this.authenticatedPhoneNumber = this.clientInfo.wid.user;
       }
-      this.startConversationMode();
     });
-
+    
     this.client.on("authenticated", async () => {
       this.clientStatus$.next("authenticated");
       if (this.client.info) {
         this.authenticatedPhoneNumber = this.client.info.wid.user;
       }
+      this.startConversationMode();
       await this.logUserAudit("authenticated");
     });
 
@@ -98,6 +98,8 @@ export class WhatsappService {
             creation_date: "desc",
           },
         });
+
+        
 
         if (!reminderMessages) {
           await this.handleConversationalMessage(message);
@@ -417,6 +419,8 @@ export class WhatsappService {
       },
     });
 
+
+
     if (reminderState) {
       if (
         reminderState.task_status === 2 &&
@@ -441,7 +445,8 @@ export class WhatsappService {
           contactName,
           patientFullName,
           appointmentDate,
-          doctorName
+          doctorName,
+          reminderState.whatsapp_msg_id,
         );
         return;
       }
@@ -481,8 +486,16 @@ export class WhatsappService {
           from,
           patientFullName,
           newTaskStatus,
-          2
+          2,
+          reminderState.whatsapp_msg_id,
         ); // 2 indica que se ha recibido una respuesta
+        await this.handleConfirmedAppointment(
+          from,
+          doctorName,
+          patientFullName,
+          appointmentDate,
+          whatsapp_msg_id
+        );
         break;
       case "2":
         
@@ -495,20 +508,63 @@ export class WhatsappService {
           from,
           patientFullName,
           newTaskStatus,
-          1
+          1,
+          reminderState.whatsapp_msg_id,
         ); // 1 indica que la conversación continúa
         break;
       case "3":
         newTaskStatus = 3; // Cancelled
         await sendResponse(this.reminderResponses.cancelled.message);
         await sendResponse(this.reminderResponses.cancelled.additionalMessage);
-        await this.updatePatientReminder(from,patientFullName,newTaskStatus,2); // 2 indica que se ha recibido una respuesta
+        await this.updatePatientReminder(
+          from,
+          patientFullName,
+          newTaskStatus,
+          2,
+          reminderState.whatsapp_msg_id
+        ); // 2 indica que se ha recibido una respuesta
+        
+        await this.handleCancelledAppointment (
+          from,
+          reminderState.doctor_name,
+          patientFullName,
+          this.reminderResponses,
+          reminderState.whatsapp_msg_id,
+          body)
+
         break;
       default:
         // Manejo de respuestas no reconocidas
         await sendResponse(this.reminderResponses.invalid.message);
         //await this.updatePatientReminder(from, patientFullName, 0, 0); // Actualizar el estado a 0 si la respuesta es inválida
         break;
+    }
+  }
+
+  private async handleCancelledAppointment(
+    from: string,
+    doctorName: string,
+    patientFullName: string,
+    responses: any,
+    whatsappMsgId: number,
+    body?: string,
+  ) {
+    // Guardar la información de la cita cancelada en la base de datos
+    try {
+      await this.prisma.cancelledAppointment.create({
+        data: {
+          whatsapp_msg_id: whatsappMsgId,
+          patient_full_name: patientFullName,
+          patient_phone: from,
+          doctor_name: doctorName,
+          reason: body || "No especificado", // Usar el cuerpo del mensaje como razón, si está disponible
+          created_at: new Date(),
+        },
+      });
+      await this.sendResponse(from, responses.cancelled.message);
+    } catch (error) {
+      this.logger.error(`Error saving cancelled appointment: ${error}`);
+      await this.sendResponse(from, "Ocurrió un error al cancelar la cita. Intenta de nuevo más tarde.");
     }
   }
 
@@ -557,18 +613,19 @@ export class WhatsappService {
     contactName: string,
     patientFullName: string,
     appointmentDate: string,
-    doctorName: string
+    doctorName: string,
+    whatsappMsgId: number
   ) {
     const welcomeMessage = this.formatWelcomeMessage(
       responses.welcome.message,
       contactName,
       patientFullName,
       appointmentDate,
-      doctorName
+      doctorName,
     );
     await this.sendResponse(from, welcomeMessage);
     await this.sendResponse(from, responses.welcome.additionalMessage);
-    await this.updatePatientReminder(from, patientFullName, 0, 1);
+    await this.updatePatientReminder(from, patientFullName, 0, 1, whatsappMsgId);
   }
 
   private formatWelcomeMessage(
@@ -661,9 +718,7 @@ export class WhatsappService {
   setCurrentUserId(userId: number) {
     this.currentUserId = userId;
   }
-
-  // Método para iniciar el modo conversacional
-  // Métodos para alternar entre modos
+  
   startConversationMode() {
     this.conversationModeActive = true;
     this.logger.log("Modo conversacional activado.");
@@ -717,6 +772,33 @@ export class WhatsappService {
     fs.rm(authFolderPath, { recursive: true, force : true });
   
     fs.rm(cacheFolderPath, { recursive: true, force: true });
+  }
+
+  async handleConfirmedAppointment(
+    from: string,
+    doctorName: string,
+    patientFullName: string,
+    appointmentDate: Date,
+    whatsappMsgId: number,
+  ) {
+    // Guardar la información de la cita confirmada en la base de datos
+    try {
+      await this.prisma.confirmedAppointment.create({
+        data: {
+          whatsapp_msg_id: whatsappMsgId,
+          patient_full_name: patientFullName,
+          patient_phone: from,
+          doctor_name: doctorName,
+          appointment_date: appointmentDate,
+          created_at: new Date(),
+          confirmation_date: new Date(),
+        },
+      });
+      await this.sendResponse(from, "Tu cita ha sido confirmada exitosamente.");
+    } catch (error) {
+      this.logger.error(`Error saving confirmed appointment: ${error}`);
+      await this.sendResponse(from, "Ocurrió un error al confirmar la cita. Intenta de nuevo más tarde.");
+    }
   }
 
 }
