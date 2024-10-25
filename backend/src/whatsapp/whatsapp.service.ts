@@ -561,7 +561,7 @@ export class WhatsappService {
           created_at: new Date(),
         },
       });
-      await this.sendResponse(from, responses.cancelled.message);
+      
     } catch (error) {
       this.logger.error(`Error saving cancelled appointment: ${error}`);
       await this.sendResponse(from, "Ocurrió un error al cancelar la cita. Intenta de nuevo más tarde.");
