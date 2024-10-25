@@ -1,5 +1,5 @@
 // ExcelViewer.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { json, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import axios from "axios";
@@ -21,7 +21,12 @@ const ExcelViewer: React.FC = () => {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
   const { setIsConversationalMode } = useConversationModeStore();
+  const fileInputRef = useRef<HTMLInputElement | null>(null); // {{ edit_1 }}
 
+
+  useEffect(()=>{
+    
+  },[excelData])
 
   const activeReminderMode = async () => {
     try {
@@ -65,6 +70,14 @@ const ExcelViewer: React.FC = () => {
 const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (file) {
+    // Limpiar el estado antes de cargar un nuevo archivo
+    setExcelData([]); // {{ edit_2 }}
+    
+    // Restablecer el valor del input de archivo
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // {{ edit_3 }}
+    }
+    
     const reader = new FileReader();
     reader.onload = (event) => {
       const data = new Uint8Array(event.target?.result as ArrayBuffer);
@@ -175,8 +188,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             patient_fullname: `${row["Nombre"]} ${row["Apellido"]}`,
             attachment: `${attachment} at ${row["Hora"]}hs`,
             doctor: service.medical_service,
-            patient_cel: row["Teléfono"].map((phone: string) => `${phone}@c.us`),
-            // patient_cel: row["Teléfono"].map((phone: string) => `5492616689241@c.us`),
+            // patient_cel: row["Teléfono"].map((phone: string) => `${phone}@c.us`),
+            patient_cel: row["Teléfono"].map((phone: string) => `5492616689241@c.us`),
           };
         }
         
@@ -299,6 +312,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                       accept=".xlsx, .xls"
                       className="sr-only"
                       onChange={handleFileUpload}
+                      ref={fileInputRef} // {{ edit_4 }}
                     />
                   </label>
                   <p className="pl-1">o arrastrar y soltar</p>
