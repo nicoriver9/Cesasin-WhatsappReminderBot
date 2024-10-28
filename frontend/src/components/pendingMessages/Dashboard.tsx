@@ -6,6 +6,8 @@ import PatientResponsesTable from "./AppointmentRequestedTable";
 import Dropdown from "./utils/Dropdown";
 import { FaChevronLeft } from "react-icons/fa"; // Font Awesome icon for navigation
 import Navbar from "../NavBar";
+import AppointmentCancelledTable from "./AppointmentCancelledTable";
+import AppointmentConfirmedTable from "./AppointmentConfirmedTable";
 
 interface Message {
   whatsapp_msg_id: number;
@@ -133,12 +135,12 @@ const Dashboard: React.FC = () => {
 
       <div className="container mx-auto p-4">
         <h2 className="text-2xl font-bold text-white mb-4">
-          Tablero de mensajes pendientes
+          Tablero de turnos
         </h2>
         <div className="space-y-4">
           {/* Messages Reschedule Section */}
           <Dropdown
-            title="Turnos reprogramados"
+            title="Reprogramados"
             isOpen={openDropdown === "messages"}
             onToggle={() => handleDropdownToggle("messages")}
           >
@@ -154,7 +156,7 @@ const Dashboard: React.FC = () => {
 
           {/* Patient Responses Section */}
           <Dropdown
-            title="Turnos solicitados"
+            title="Solicitados"
             isOpen={openDropdown === "responses"}
             onToggle={() => handleDropdownToggle("responses")}
           >
@@ -170,47 +172,33 @@ const Dashboard: React.FC = () => {
 
           {/* Confirmed Appointments Section */}
           <Dropdown
-            title="Turnos confirmados"
+            title="Confirmados"
             isOpen={openDropdown === "confirmed"}
             onToggle={() => handleDropdownToggle("confirmed")}
           >
             {loadingConfirmed ? (
               <p>Cargando turnos confirmadas...</p>
             ) : (
-              <div>
-                {confirmedAppointments.length > 0 ? (
-                  confirmedAppointments.map((appointment) => (
-                    <div key={appointment.confirmed_appointment_id}>
-                      <p>{appointment.patient_full_name} - {appointment.appointment_date}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p>No hay turnos confirmados.</p>
-                )}
-              </div>
+              <AppointmentConfirmedTable
+                appointments={confirmedAppointments}
+                refreshAppointments={fetchConfirmedAppointments}
+              />
             )}
           </Dropdown>
 
           {/* Cancelled Appointments Section */}
           <Dropdown
-            title="Turnos cancelados"
+            title="Cancelados"
             isOpen={openDropdown === "cancelled"}
             onToggle={() => handleDropdownToggle("cancelled")}
           >
             {loadingCancelled ? (
               <p>Cargando turnos canceladas...</p>
             ) : (
-              <div>
-                {cancelledAppointments.length > 0 ? (
-                  cancelledAppointments.map((appointment) => (
-                    <div key={appointment.cancelled_appointment_id}>
-                      <p>{appointment.patient_full_name} - {appointment.cancellation_date}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p>No hay turnos cancelados.</p>
-                )}
-              </div>
+              <AppointmentCancelledTable
+                appointments={cancelledAppointments}
+                refreshAppointments={fetchCancelledAppointments}
+              />
             )}
           </Dropdown>
         </div>

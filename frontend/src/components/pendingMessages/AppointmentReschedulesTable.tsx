@@ -146,7 +146,7 @@ const MessagesRescheduleTable: React.FC<{ messages: any[], refreshMessages: () =
                     )}
                   </td>                
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{message.patient_full_name}</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.patient_phone}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.patient_phone.replace('@c.us', '')}</td>
                   <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                     {/* {message.message} */}
                   <button
