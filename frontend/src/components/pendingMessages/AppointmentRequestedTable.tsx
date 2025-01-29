@@ -14,10 +14,11 @@ interface User {
 
 // Update the component props to include the refresh function
 const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () => void }> = ({ responses, refreshResponses }) => {
+  
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPhoneNumber, setIsPhoneNumber] = useState<string>('');
@@ -79,7 +80,7 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          patientId: selectedMessage.patient_id, // Asegúrate de que este campo exista en tu objeto message
+          patientId: selectedMessage.patient_id,
           message: selectedMessage.message,
           patientPhone: selectedMessage.patient_phone
         })
@@ -88,10 +89,8 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
       if (!response.ok) {
         throw new Error('Failed to send message');
       }
-
-      console.log('Message sent successfully');
-      setIsConfirmationModalOpen(false);
-      // Call the refresh function after successful send
+      
+      setIsConfirmationModalOpen(false);      
       refreshResponses();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -112,7 +111,7 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
   return (
     <>
 
-      <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md">
+      <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md overflow-y-auto max-h-96">
         <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow-lg">
           <thead className="bg-blue-500 text-white">
             <tr>

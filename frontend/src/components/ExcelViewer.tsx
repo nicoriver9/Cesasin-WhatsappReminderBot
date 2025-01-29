@@ -1,6 +1,6 @@
 // ExcelViewer.tsx
 import React, { useState, useEffect, useRef } from "react";
-import { json, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import Navbar from "./NavBar"; // Importar el componente Navbar
@@ -14,7 +14,7 @@ interface MedicalService {
 }
 
 const ExcelViewer: React.FC = () => {
-  const [token, setToken] = useState<any>(localStorage.getItem("access_token"));
+  const [token, ] = useState<any>(localStorage.getItem("access_token"));
   const [excelData, setExcelData] = useState<any[][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [formattedPatients, setFormattedPatients] = useState<any[]>([]);
@@ -77,6 +77,9 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (fileInputRef.current) {
       fileInputRef.current.value = ""; // {{ edit_3 }}
     }
+    
+    // Guardar el nombre del archivo en una variable
+    const fileName = file.name; // {{ edit_4 }}
     
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -152,28 +155,47 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       }
 
       
-      generatePatientData(services, jsonData);
+      generatePatientData(services, fileName);
     };
     reader.readAsArrayBuffer(file);
   }
 };
 
   const generatePatientData = (
-    services: MedicalService[],
-    excelData: any[][]
-  ) => {
-    // console.log(services)
-    // Extract the date from the first row
-    const dateString: string = excelData[0][0];
-    const [day, month, year] = dateString.replace("Turnos del día ", "").split("/").map(Number);
-    const excelDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
-    
-    if (excelDate.toISOString().split("T")[0] <= new Date().toISOString().split("T")[0]) {
-      alert("El archivo 'Turnos del día' no coincide con la fecha de mañana. Por favor, asegúrate de que el archivo está actualizado.");
+    services: MedicalService[],    
+    fileName: string,
+  ) => {    
+    // Extraer la fecha del nombre del archivo
+    fileName = fileName.replace('.xls','');
+    const dateString: string = fileName.split('-').slice(1, 4).join('-');     
+    const [day, month, year] = dateString.split('-').map(Number);
+
+    // Validar que los valores de día, mes y año sean válidos
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+        console.error("Error: valores de fecha no válidos", { day, month, year });
+        alert("Error al extraer la fecha del archivo. Por favor, verifica el nombre del archivo.");
+        return; // Salir de la función si los valores no son válidos
     }
-    // Calculate the next business day
+
+    const excelDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+
+    // Validar que la fecha sea válida
+    if (isNaN(excelDate.getTime())) {
+        console.error("Error: fecha no válida", excelDate);
+        alert("Error al crear la fecha a partir del archivo. Por favor, verifica el nombre del archivo.");
+        return; // Salir de la función si la fecha no es válida
+    }
+
+    try {
+        const fileExcelDate = excelDate.toISOString().split("T")[0];
+        if (fileExcelDate <= new Date().toISOString().split("T")[0]) {
+            alert("El archivo 'Turnos del día' no coincide con la fecha de mañana. Por favor, asegúrate de que el archivo está actualizado.");
+        }
+    } catch (error) {
+        console.error("Error al verificar la fecha del archivo: ", error);
+    }
     const nextBusinessDay = getNextBusinessDay(excelDate);
-    const attachment = nextBusinessDay.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+    const attachment = nextBusinessDay.toISOString().split("T")[0];
 
     // const today = new Date().toISOString().split("T")[0];
     const patientsArray = services.flatMap((service) =>      
@@ -188,8 +210,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             patient_fullname: `${row["Nombre"]} ${row["Apellido"]}`,
             attachment: `${attachment} at ${row["Hora"]}hs`,
             doctor: service.medical_service,
-            // patient_cel: row["Teléfono"].map((phone: string) => `${phone}@c.us`),
-            patient_cel: row["Teléfono"].map((phone: string) => `5492616689241@c.us`),
+            patient_cel: row["Teléfono"].map((phone: string) => `${phone}@c.us`),
+            // patient_cel: row["Teléfono"].map(() => `5492616689241@c.us`),
           };
         }
         

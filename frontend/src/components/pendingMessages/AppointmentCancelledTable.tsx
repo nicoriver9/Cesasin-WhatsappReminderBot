@@ -12,7 +12,7 @@ interface AppointmentCancelledTableProps {
   refreshAppointments: () => void;
 }
 
-const AppointmentCancelledTable: React.FC<AppointmentCancelledTableProps> = ({ appointments, refreshAppointments }) => {
+const AppointmentCancelledTable: React.FC<AppointmentCancelledTableProps> = ({ appointments }) => {
   return (
     <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md overflow-y-auto max-h-96">
       <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md">

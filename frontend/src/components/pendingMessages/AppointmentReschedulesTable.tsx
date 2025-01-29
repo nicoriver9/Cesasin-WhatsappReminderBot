@@ -28,7 +28,7 @@ const MessagesRescheduleTable: React.FC<{ messages: any[], refreshMessages: () =
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-  const [currentUser, setCurrentUser] = useState<DecodedUser | null>(null);
+  const [, setCurrentUser] = useState<DecodedUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPhoneNumber, setIsPhoneNumber] = useState<string>('');
@@ -95,8 +95,7 @@ const MessagesRescheduleTable: React.FC<{ messages: any[], refreshMessages: () =
       if (!response.ok) {
         throw new Error('Failed to send message');
       }
-
-      console.log('Message sent successfully');
+      
       setIsConfirmationModalOpen(false);
       setIsMessageModalOpen(false);
       refreshMessages(); // Call the refreshMessages function after successful send
@@ -118,7 +117,7 @@ const MessagesRescheduleTable: React.FC<{ messages: any[], refreshMessages: () =
 
   return (
     <>
-      <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md">
+      <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md overflow-y-auto max-h-96">
         <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow-lg">
           <thead className="bg-blue-500 text-white">
             <tr>

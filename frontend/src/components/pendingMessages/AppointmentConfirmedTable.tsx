@@ -12,7 +12,7 @@ interface AppointmentConfirmedTableProps {
   refreshAppointments: () => void;
 }
 
-const AppointmentConfirmedTable: React.FC<AppointmentConfirmedTableProps> = ({ appointments, refreshAppointments }) => {
+const AppointmentConfirmedTable: React.FC<AppointmentConfirmedTableProps> = ({ appointments }) => {
   return (
     <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md overflow-y-auto max-h-96">
       <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow-lg">
