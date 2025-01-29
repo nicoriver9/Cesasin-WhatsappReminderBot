@@ -68,5 +68,33 @@ export declare class WhatsappController {
         message: string;
         error: any;
     }>;
+    getConfirmedAppointments(): Promise<{
+        confirmed_appointment_id: number;
+        whatsapp_msg_id: number;
+        patient_full_name: string;
+        patient_id: number | null;
+        patient_phone: string | null;
+        doctor_name: string;
+        appointment_date: Date;
+        created_at: Date;
+        confirmation_date: Date;
+    }[] | {
+        message: string;
+        error: any;
+    }>;
+    getCancelledAppointments(): Promise<{
+        cancelled_appointment_id: number;
+        whatsapp_msg_id: number;
+        patient_full_name: string;
+        patient_id: number | null;
+        patient_phone: string | null;
+        doctor_name: string;
+        cancellation_date: Date;
+        reason: string | null;
+        created_at: Date;
+    }[] | {
+        message: string;
+        error: any;
+    }>;
     private getIPAddress;
 }

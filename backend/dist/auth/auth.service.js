@@ -29,7 +29,7 @@ let AuthService = class AuthService {
     async login(user) {
         const payload = { username: user.username, sub: user.user_id };
         return {
-            access_token: this.jwtService.sign(payload),
+            access_token: this.jwtService.sign(payload, { expiresIn: '1h' }),
         };
     }
     async register(userDto) {

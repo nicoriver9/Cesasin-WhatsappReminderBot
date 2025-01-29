@@ -64,9 +64,8 @@ export class WhatsappController {
       const reminderMessages = this.loadReminderMessage();
       const welcomeMessage = reminderMessages.welcome.message;
       const additionalMessage = reminderMessages.welcome.additionalMessage;
-      // const options = reminderMessages.welcome.options;
-      
-      // Convertir la fecha al formato español
+      const options = reminderMessages.welcome.options;
+            
       const spanishDate = this.convertToSpanishDate(attachment);
 
       const message = welcomeMessage
@@ -74,10 +73,10 @@ export class WhatsappController {
         .replace('{attachment}', spanishDate)
         .replace('{doctor}', doctor);
 
-      let messageOptions = "\n" + additionalMessage ;
-      // for (const [key, value] of Object.entries(options)) {
-      //   messageOptions += `${key}. ${value}\n`;
-      // }
+      let messageOptions = "\n" + additionalMessage + "\n";
+      for (const [key, value] of Object.entries(options)) {
+        messageOptions += `${key}. ${value}\n`;
+      }
 
       for (const phone of patient_cel) {
         try {          
@@ -98,7 +97,7 @@ export class WhatsappController {
             creation_date: new Date(),
             creation_time: new Date().toLocaleTimeString(),
             creation_user: user.username,
-            reminder_state: 0,
+            reminder_state: 1,
           });
 
           userAuditData.push({

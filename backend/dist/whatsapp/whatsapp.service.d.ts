@@ -1,6 +1,6 @@
 import { Message } from "whatsapp-web.js";
-import { PrismaService } from "../prisma/prisma.service";
 import { Observable } from "rxjs";
+import { PrismaService } from "../prisma/prisma.service";
 export declare class WhatsappService {
     private readonly prisma;
     private readonly logger;
@@ -16,10 +16,16 @@ export declare class WhatsappService {
     private conversationalResponses;
     private reminderResponses;
     private processingLocks;
+    private presenceUpdateInterval;
+    private remoteAuth;
     constructor(prisma: PrismaService);
+    private loadPhoneNumbersToAvoid;
     getClientStatus(): Observable<string>;
     getQRCode(): Observable<string | null>;
     getAuthenticatedPhoneNumber(): Observable<string | null>;
+    private startKeepAlive;
+    private startPresenceUpdates;
+    private stopPresenceUpdates;
     sendMessage(to: string, message: string, options?: string): Promise<number>;
     private loadConversationalResponses;
     private expectedResponses;
@@ -28,6 +34,7 @@ export declare class WhatsappService {
     private updatePatientResponse;
     private loadReminderResponses;
     handleReminderMessage(message: Message, reminderMessage: any): Promise<void>;
+    private handleCancelledAppointment;
     private handleRescheduledAppointment;
     private saveAppointmentReschedule;
     private handleInitialGreeting;
@@ -43,4 +50,6 @@ export declare class WhatsappService {
     isBotEnabled(): boolean;
     private logUserAudit;
     private getIPAddress;
+    private clearAuthAndCacheFolders;
+    handleConfirmedAppointment(from: string, doctorName: string, patientFullName: string, appointmentDate: Date, whatsappMsgId: number): Promise<void>;
 }

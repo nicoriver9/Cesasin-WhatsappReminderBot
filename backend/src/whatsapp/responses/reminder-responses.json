@@ -16,7 +16,8 @@
       "additionalMessage": "Para un nuevo turno llamar al 2614769077 opción 2 de lunes a viernes de 9 a 20 hs"
     },
     "invalid": {
-      "message": "Opción no válida. Por favor, responde con 1, 2 o 3."
+      "message": "Hola {patientFullName}, este es un recordatorio de su turno el {appointmentDate} con {doctorName}.",
+      "additionalMessage": "Por favor, elija una opción:\n1. Confirmar cita\n2. Reprogramar cita\n3. Cancelar cita"  
     }, 
     "additionalInformation": {
       "message": "Para agendar su turno, por favor proporcione la siguiente información:\n\n1. Especialidad requerida (elija una): psiquiatría, psicología, neurología, nutrición, clínica médica, tratamiento de adicciones, TCA, o rehabilitación neurocognitiva*\n2. Nombre completo del profesional (si tiene preferencia)\n3. DNI (sin puntos ni espacios)*\n4. Apellido y nombre completo del paciente*\n5. Número de teléfono celular (formato: 549261XXXXXXX)*\n6. Domicilio completo y código postal*\n7. Fecha de nacimiento (formato: DD/MM/AAAA)*\n8. Dirección de correo electrónico*\n9. Obra social, plan y número de afiliado*\n10. Preferencia horaria (mañana o tarde)\n\nNota: Los campos marcados con * son obligatorios."
