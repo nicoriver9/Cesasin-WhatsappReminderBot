@@ -1,0 +1,20 @@
+{
+  "welcome": {
+    "message": "Bienvenido a CESASIN!!! Te recuerdo que nuestros horarios de atención son de lunes a viernes de 9 a 20 hs.\n¿En qué te puedo ayudar? Elegí alguna de estas opciones:\n• 1 Urgencias e internaciones\n• 2 Solicitar turno"
+  },
+  "option1": {
+    "message": "Para consultas de urgencias e internaciones, por favor comuníquese telefónicamente al 2614769077 opción 1, o 2615719226."
+  },
+  "option2": {
+    "message": "Para solicitar un turno, te solicitamos la siguiente información:\n- Especialidad para la que necesita turno (psiquiatría, psicología, neurología, nutrición, clínica médica, dispositivos de tratamiento en adicciones o TCA, rehabilitación neurocognitiva) *\n- Profesional (nombre completo)\n- DNI (sin puntos) *\n- Apellido y nombre *\n- Teléfono celular (549261…….) *\n- Domicilio y CP *\n- Fecha de nacimiento (dd/mm/aaaa) *\n- E-mail *\n- Obra social, plan y Nro. de afiliado *\n- Preferencia horaria (mañana/tarde)\n- En caso de derivación, adjuntar\n\nEn breve nos comunicaremos con Usted."
+  },  
+  "unknownOption": {
+    "message": "Lo siento, esa opción no existe. Intenta con una de las opciones disponibles. Elegí alguna de estas opciones:\n• 1 Urgencias e internaciones\n• 2 Solicitar turno"
+  },
+  "unknown": {
+    "message": "Lo siento, no entiendo tu mensaje. Intenta con 'Hola'."
+  },
+  "thanks": {
+    "message": "Gracias por la información. La revisaremos y nos comunicaremos con Usted."
+  }
+}
