@@ -304,6 +304,35 @@ export class WhatsappController {
       return { message: 'Error retrieving cancelled appointments', error: error.message };
     }
   }
+  
+  @UseGuards(JwtAuthGuard)
+@Post('restart-client')
+async restartClient(@User() user: any, @Req() request: Request) {
+  try {
+    this.whatsappService.setCurrentUserId(user.user_id);
+    await this.whatsappService.restartClient();
+
+    // Registrar acción en auditoría
+    await this.prisma.userAudit.create({
+      data: {
+        user_id: user.user_id,
+        action: 'Restarted WhatsApp client',
+        details: `User ${user.username} manually restarted the WhatsApp client.`,
+        ip_address: this.getIPAddress(request),
+      },
+    });
+
+    return { message: 'WhatsApp client restarted successfully' };
+  } catch (error) {
+    console.error('Error restarting WhatsApp client:', error);
+
+    return {
+      message: 'Failed to restart WhatsApp client',
+      error: error.message,
+    };
+  }
+}
+
 
   private getIPAddress(request: Request): string | null {
     // Primero intenta obtener la IP desde el encabezado 'x-forwarded-for'

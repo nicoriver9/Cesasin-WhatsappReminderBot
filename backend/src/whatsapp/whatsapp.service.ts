@@ -27,7 +27,7 @@ export class WhatsappService {
   private processingLocks: Map<string, boolean> = new Map();
   private presenceUpdateInterval: NodeJS.Timeout | null = null;
 
-  private remoteAuth: RemoteAuth;
+  
 
   constructor(private readonly prisma: PrismaService) {
     const os = require("os");
@@ -880,24 +880,7 @@ export class WhatsappService {
     return null;
   }
 
-  private clearAuthAndCacheFolders() {
-    const fs = require("fs");
-    const path = require("path");
-    const authFolderPath = path.join(
-      __dirname,
-      "..",
-      "..",
-      ".wwebjs_auth",
-      "session",
-      "Default"
-    );
-    const cacheFolderPath = path.join(__dirname, "..", "..", ".wwebjs_cache");
-
-    fs.rm(authFolderPath, { recursive: true, force: true });
-
-    fs.rm(cacheFolderPath, { recursive: true, force: true });
-  }
-
+  
   async handleConfirmedAppointment(
     from: string,
     doctorName: string,
@@ -927,4 +910,33 @@ export class WhatsappService {
       );
     }
   }
+
+  async restartClient(): Promise<void> {
+    try {
+      const os = require("os");
+      const isLinux = os.platform() === "linux";
+      this.logger.log('Restarting WhatsApp client...');
+      
+      if (this.client) {
+        await this.client.destroy();
+      }
+      
+      this.client = new Client({
+        authStrategy: new NoAuth(),      
+        puppeteer: isLinux
+          ? {
+              headless: false,
+              args: ["--no-sandbox", "--disable-setuid-sandbox"],
+            }
+          : undefined,
+      });
+  
+      this.client.initialize();
+      this.logger.log('WhatsApp client restarted successfully.');
+    } catch (error) {
+      this.logger.error('Error restarting WhatsApp client:', error);
+      throw new Error('Failed to restart WhatsApp client.');
+    }
+  }
+  
 }
