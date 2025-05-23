@@ -52,7 +52,7 @@ export class WhatsappService {
           }
         : undefined,
     });
-    
+
     //this.clearAuthAndCacheFolders();
     // this.client.initialize();
     this.initializeClient();
@@ -78,111 +78,45 @@ export class WhatsappService {
   }
 
   private initializeClient() {
-    const os = require("os");
-    const isLinux = os.platform() === "linux";    
+    const chromiumPath = "/usr/bin/chromium"; // Asegúrate que esta ruta sea correcta: ejecutá `which chromium`
+
     this.client = new Client({
       authStrategy: new NoAuth(),
-      puppeteer: isLinux
-        ? {
-            headless: false,
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
-          }
-        : undefined,
+      puppeteer: {
+        executablePath: chromiumPath,
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      },
     });
-
-    this.client.initialize();
 
     this.client.on("qr", (qr: string) => {
       this.clientStatus$.next("qr");
       this.qrCodeSubject$.next(qr);
-      qrcode.generate(qr, { small: true });
     });
 
-    this.client.on("ready", async () => {
+    this.client.on("ready", () => {
       this.clientStatus$.next("ready");
-      await this.logUserAudit("ready");
       this.clientInfo = this.client.info;
       if (this.clientInfo) {
         this.authenticatedPhoneNumber = this.clientInfo.wid.user;
       }
-
-      this.startKeepAlive(); // Inicia el mecanismo de keep-alive
-      this.startPresenceUpdates();
+      this.logger.log("WhatsApp client is ready.");
     });
 
-    this.client.on("authenticated", async () => {
+    this.client.on("authenticated", () => {
       this.clientStatus$.next("authenticated");
       if (this.client.info) {
         this.authenticatedPhoneNumber = this.client.info.wid.user;
       }
-      this.startConversationMode();
-      await this.logUserAudit("authenticated");
+      this.logger.log("WhatsApp client authenticated.");
     });
 
-    this.client.on("auth_failure", async (msg) => {
-      this.clientStatus$.next("auth_failure");
-      await this.logUserAudit("auth_failure", msg);
-    });
-
-    this.client.on("disconnected", async (reason) => {
-      console.log("client disconnected");
+    this.client.on("disconnected", (reason) => {
+      this.logger.warn(`WhatsApp client disconnected. Reason: ${reason}`);
       this.clientStatus$.next("disconnected");
-      await this.logUserAudit("disconnected", reason);
-      this.stopPresenceUpdates(); // Detiene el mecanismo al desconectarse
-      //  this.clearAuthAndCacheFolders();
     });
 
-    this.client.on("message", async (message: Message) => {
-      const phoneNumbersToAvoid = this.loadPhoneNumbersToAvoid();
-      const phoneList = phoneNumbersToAvoid.phones;
-      const phoneArray = [];
-
-      for (const [_, value] of Object.entries(phoneList)) {
-        phoneArray.push(value);
-      }
-
-      const { from } = message;
-
-      if (
-        from.endsWith("@g.us") ||
-        phoneArray.includes(`${from.replace("@c.us", "")}`)
-      ) {
-        return; // Salir de la función para evitar procesar mensajes de grupo
-      }
-
-      const currentDate = new Date();
-
-      if (this.conversationModeActive) {
-        try {
-          const reminderMessages = await this.prisma.whatsappMsg.findFirst({
-            where: {
-              patient_phone: from,
-              task_status: { in: [0, 2] },
-              reminder_state: { not: 2 },
-              appointment_date: {
-                gt: currentDate, // Filtra para que la fecha del turno sea mayor a la fecha actual'
-              },
-            },
-            orderBy: {
-              creation_date: "desc",
-            },
-          });
-
-          if (!reminderMessages) {
-            await this.handleConversationalMessage(message);
-          } else {
-            //console.log('reminderMessages',reminderMessages)
-            await this.handleReminderMessage(message, reminderMessages);
-          }
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    });
-
-    this.conversationalResponses = this.loadConversationalResponses();
-    this.reminderResponses = this.loadReminderResponses();
-
+    this.client.initialize();
   }
 
   getClientStatus(): Observable<string> {
@@ -940,11 +874,22 @@ export class WhatsappService {
       this.logger.log("Restarting WhatsApp client...");
 
       if (this.client) {
-        this.logger.log("WhatsApp client destroyed...");
-        await this.client.destroy();
+        try {
+          await this.client.destroy();
+          this.logger.log("Previous client instance destroyed.");
+        } catch (err) {
+          this.logger.warn("Client destroy failed (possibly already closed).");
+        }
       }
-      // Limpiar archivos de sesión y caché (opcional, pero recomendable)
+
       this.clearAuthAndCacheFolders();
+
+      // Reset client status observables
+      this.clientStatus$ = new BehaviorSubject<string>("initializing");
+      this.qrCodeSubject$ = new BehaviorSubject<string | null>(null);
+      this.clientInfo = null;
+
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // breve delay
 
       this.initializeClient();
 
