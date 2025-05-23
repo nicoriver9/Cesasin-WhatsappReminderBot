@@ -1,5 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Client, LocalAuth, ClientInfo, Message, RemoteAuth, NoAuth } from "whatsapp-web.js";
+import {
+  Client,
+  LocalAuth,
+  ClientInfo,
+  Message,
+  RemoteAuth,
+  NoAuth,
+} from "whatsapp-web.js";
 import * as qrcode from "qrcode-terminal";
 import { BehaviorSubject, Observable, of } from "rxjs";
 import { filter } from "rxjs/operators";
@@ -27,18 +34,16 @@ export class WhatsappService {
   private processingLocks: Map<string, boolean> = new Map();
   private presenceUpdateInterval: NodeJS.Timeout | null = null;
 
-  
-
   constructor(private readonly prisma: PrismaService) {
     const os = require("os");
     const isLinux = os.platform() === "linux";
 
     this.client = new Client({
       authStrategy: new NoAuth(),
-    //   new LocalAuth({
-    //     clientId: "cesasin",
-    //     dataPath: './.wwebjs_auth' // Guarda la sesión en una carpeta específica
-    // }),
+      //   new LocalAuth({
+      //     clientId: "cesasin",
+      //     dataPath: './.wwebjs_auth' // Guarda la sesión en una carpeta específica
+      // }),
       // authStrategy: new MySQLAuthStrategy(this.prisma),
       puppeteer: isLinux
         ? {
@@ -47,6 +52,45 @@ export class WhatsappService {
           }
         : undefined,
     });
+    
+    //this.clearAuthAndCacheFolders();
+    // this.client.initialize();
+    this.initializeClient();
+  }
+
+  private loadPhoneNumbersToAvoid() {
+    try {
+      const filePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "src",
+        "whatsapp",
+        "phone-numbers-avoid",
+        "phone-list.json"
+      );
+      const rawData = fs.readFileSync(filePath, "utf-8");
+      return JSON.parse(rawData);
+    } catch (error) {
+      console.error("Error loading reminder phones:", error);
+      return {}; // Return an empty object as a fallback
+    }
+  }
+
+  private initializeClient() {
+    const os = require("os");
+    const isLinux = os.platform() === "linux";    
+    this.client = new Client({
+      authStrategy: new NoAuth(),
+      puppeteer: isLinux
+        ? {
+            headless: false,
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+          }
+        : undefined,
+    });
+
+    this.client.initialize();
 
     this.client.on("qr", (qr: string) => {
       this.clientStatus$.next("qr");
@@ -60,11 +104,10 @@ export class WhatsappService {
       this.clientInfo = this.client.info;
       if (this.clientInfo) {
         this.authenticatedPhoneNumber = this.clientInfo.wid.user;
-      }   
-      
+      }
+
       this.startKeepAlive(); // Inicia el mecanismo de keep-alive
       this.startPresenceUpdates();
-      
     });
 
     this.client.on("authenticated", async () => {
@@ -140,27 +183,6 @@ export class WhatsappService {
     this.conversationalResponses = this.loadConversationalResponses();
     this.reminderResponses = this.loadReminderResponses();
 
-    //this.clearAuthAndCacheFolders();
-    this.client.initialize();
-  }
-
-  private loadPhoneNumbersToAvoid() {
-    try {
-      const filePath = path.join(
-        __dirname,
-        "..",
-        "..",
-        "src",
-        "whatsapp",
-        "phone-numbers-avoid",
-        "phone-list.json"
-      );
-      const rawData = fs.readFileSync(filePath, "utf-8");
-      return JSON.parse(rawData);
-    } catch (error) {
-      console.error("Error loading reminder phones:", error);
-      return {}; // Return an empty object as a fallback
-    }
   }
 
   getClientStatus(): Observable<string> {
@@ -179,25 +201,28 @@ export class WhatsappService {
     const keepAliveInterval = 1 * 30 * 1000; // Cada 5 minutos (ajústalo según necesidades)
 
     setInterval(async () => {
-        try {
-            console.log('Simulating typing activity...');
-            const chat = await this.client.getChatById("5492616689241@c.us"); // Usa un ID de prueba o alterna entre varios si es posible
-            if (chat) {
-                await chat.sendStateTyping();
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Simular "escribiendo" durante 2 segundos
-                await chat.clearState();
-                console.log(new Date().toLocaleString(),'Typing activity simulated.');
-            }
-        } catch (error) {
-            console.error('Error simulating typing:', error.message);
-            if (error) {
-                // Maneja la reconexión o envía alertas si es necesario
-                console.log("Attempting to reinitialize the client...");
-                // this.client.initialize();
-            }
+      try {
+        console.log("Simulating typing activity...");
+        const chat = await this.client.getChatById("5492616689241@c.us"); // Usa un ID de prueba o alterna entre varios si es posible
+        if (chat) {
+          await chat.sendStateTyping();
+          await new Promise((resolve) => setTimeout(resolve, 2000)); // Simular "escribiendo" durante 2 segundos
+          await chat.clearState();
+          console.log(
+            new Date().toLocaleString(),
+            "Typing activity simulated."
+          );
         }
+      } catch (error) {
+        console.error("Error simulating typing:", error.message);
+        if (error) {
+          // Maneja la reconexión o envía alertas si es necesario
+          console.log("Attempting to reinitialize the client...");
+          // this.client.initialize();
+        }
+      }
     }, keepAliveInterval);
-  } 
+  }
 
   private startPresenceUpdates() {
     const intervalTime = 5 * 60 * 1000; // 5 minutos (ajusta según necesidad)
@@ -880,7 +905,6 @@ export class WhatsappService {
     return null;
   }
 
-  
   async handleConfirmedAppointment(
     from: string,
     doctorName: string,
@@ -913,30 +937,37 @@ export class WhatsappService {
 
   async restartClient(): Promise<void> {
     try {
-      const os = require("os");
-      const isLinux = os.platform() === "linux";
-      this.logger.log('Restarting WhatsApp client...');
-      
+      this.logger.log("Restarting WhatsApp client...");
+
       if (this.client) {
+        this.logger.log("WhatsApp client destroyed...");
         await this.client.destroy();
       }
-      
-      this.client = new Client({
-        authStrategy: new NoAuth(),      
-        puppeteer: isLinux
-          ? {
-              headless: false,
-              args: ["--no-sandbox", "--disable-setuid-sandbox"],
-            }
-          : undefined,
-      });
-  
-      this.client.initialize();
-      this.logger.log('WhatsApp client restarted successfully.');
+      // Limpiar archivos de sesión y caché (opcional, pero recomendable)
+      this.clearAuthAndCacheFolders();
+
+      this.initializeClient();
+
+      this.logger.log("WhatsApp client restarted successfully.");
     } catch (error) {
-      this.logger.error('Error restarting WhatsApp client:', error);
-      throw new Error('Failed to restart WhatsApp client.');
+      this.logger.error("Error restarting WhatsApp client:", error);
+      throw new Error("Failed to restart WhatsApp client.");
     }
   }
-  
+
+  private clearAuthAndCacheFolders() {
+    const fs = require("fs");
+    const path = require("path");
+
+    // const authFolderPath = path.join(__dirname, "..", "..", ".wwebjs_auth");
+    const cacheFolderPath = path.join(__dirname, "..", "..", ".wwebjs_cache");
+
+    try {
+      // fs.rmSync(authFolderPath, { recursive: true, force: true });
+      fs.rmSync(cacheFolderPath, { recursive: true, force: true });
+      this.logger.log("Authentication and cache folders cleared.");
+    } catch (error) {
+      this.logger.error("Error clearing auth and cache folders:", error);
+    }
+  }
 }
