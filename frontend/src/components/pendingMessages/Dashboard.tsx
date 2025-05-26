@@ -1,13 +1,16 @@
 // Dashboard.tsx
 import React, { useState, useEffect } from "react";
+import { FaCalendarAlt } from 'react-icons/fa';
+// import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import axios from "axios";
 import MessagesRescheduleTable from "./AppointmentReschedulesTable";
 import PatientResponsesTable from "./AppointmentRequestedTable";
 import Dropdown from "./utils/Dropdown";
-import { FaChevronLeft } from "react-icons/fa"; // Font Awesome icon for navigation
+import { FaChevronLeft } from "react-icons/fa";
 import Navbar from "../NavBar";
 import AppointmentCancelledTable from "./AppointmentCancelledTable";
 import AppointmentConfirmedTable from "./AppointmentConfirmedTable";
+import "./dashboard.css";
 
 interface Message {
   whatsapp_msg_id: number;
@@ -74,7 +77,7 @@ const Dashboard: React.FC = () => {
   };
 
   const fetchConfirmedAppointments = async () => {
-    setLoadingConfirmed(true); // Iniciar carga
+    setLoadingConfirmed(true);
     try {
       const response = await axios.get(
         `${apiUrl}/api/whatsapp/confirmed-appointments`,
@@ -82,16 +85,16 @@ const Dashboard: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setConfirmedAppointments(response.data); // Guardar datos
+      setConfirmedAppointments(response.data);
     } catch (error) {
       console.error("Error fetching confirmed appointments:", error);
     } finally {
-      setLoadingConfirmed(false); // Finalizar carga
+      setLoadingConfirmed(false);
     }
   };
 
   const fetchCancelledAppointments = async () => {
-    setLoadingCancelled(true); // Iniciar carga
+    setLoadingCancelled(true);
     try {
       const response = await axios.get(
         `${apiUrl}/api/whatsapp/cancelled-appointments`,
@@ -99,11 +102,11 @@ const Dashboard: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setCancelledAppointments(response.data); // Guardar datos
+      setCancelledAppointments(response.data);
     } catch (error) {
       console.error("Error fetching cancelled appointments:", error);
     } finally {
-      setLoadingCancelled(false); // Finalizar carga
+      setLoadingCancelled(false);
     }
   };
 
@@ -118,89 +121,94 @@ const Dashboard: React.FC = () => {
     setOpenDropdown(openDropdown === dropdown ? null : dropdown);
   };
 
+  const renderDropdown = (
+    key: string,
+    label: string,
+    isOpen: boolean,
+    onToggle: () => void,
+    content: React.ReactNode
+  ) => (
+    <Dropdown
+      key={key}
+      title={label} // Solo el texto (string)
+      isOpen={isOpen}
+      onToggle={onToggle}
+    >
+      {content}
+    </Dropdown>
+  );
+
   return (
-    <div className="relative bg-gradient-to-r from-blue-400 to-indigo-600 min-h-screen p-4">
+    <div id="dashboard-root">
       <Navbar />
-      {/* Navigation Button */}
-      <div className="mt-24">
-        {" "}
-        {/* Increased margin-top to create more space below Navbar */}
+      <div className="mt-20">
         <a
           href="/whatsapp-status"
-          className="fixed top-24 left-4 bg-white text-blue-500 rounded-full p-2 shadow-lg hover:bg-gray-100 z-10"
+          className="fixed top-24 left-10 bg-white text-blue-500 rounded-full p-2 shadow-lg hover:bg-gray-100 z-10 hover:scale-110 hover:duration-300"
+          title="Volver"
         >
           <FaChevronLeft size={24} />
         </a>
       </div>
 
       <div className="container mx-auto p-4">
-        <h2 className="text-2xl font-bold text-white mb-4">
+        <h2 className="title-animated text-2xl font-bold text-white mb-4 flex items-center gap-2 relative pb-2">
           Tablero de turnos
+          <FaCalendarAlt className="text-white text-xl ml-2" />
         </h2>
+
         <div className="space-y-4">
-          {/* Messages Reschedule Section */}
-          <Dropdown
-            title="Reprogramados"
-            isOpen={openDropdown === "messages"}
-            onToggle={() => handleDropdownToggle("messages")}
-          >
-            {loadingMessages ? (
+          {/* Reprogramados */}
+          {renderDropdown(
+            "messages",
+            "Reprogramados",
+            openDropdown === "messages",
+            () => handleDropdownToggle("messages"),
+            loadingMessages ? (
               <p>Cargando turnos reprogramados...</p>
             ) : (
-              <MessagesRescheduleTable
-                messages={messages}
-                refreshMessages={fetchMessages}
-              />
-            )}
-          </Dropdown>
+              <MessagesRescheduleTable messages={messages} refreshMessages={fetchMessages} />
+            )
+          )}
 
-          {/* Patient Responses Section */}
-          <Dropdown
-            title="Solicitados"
-            isOpen={openDropdown === "responses"}
-            onToggle={() => handleDropdownToggle("responses")}
-          >
-            {loadingResponses ? (
+          {/* Solicitados */}
+          {renderDropdown(
+            "responses",
+            "Solicitados",
+            openDropdown === "responses",
+            () => handleDropdownToggle("responses"),
+            loadingResponses ? (
               <p>Cargando turnos solicitados...</p>
             ) : (
-              <PatientResponsesTable
-                responses={responses}
-                refreshResponses={fetchResponses}
-              />
-            )}
-          </Dropdown>
+              <PatientResponsesTable responses={responses} refreshResponses={fetchResponses} />
+            )
+          )}
 
-          {/* Confirmed Appointments Section */}
-          <Dropdown
-            title="Confirmados"
-            isOpen={openDropdown === "confirmed"}
-            onToggle={() => handleDropdownToggle("confirmed")}
-          >
-            {loadingConfirmed ? (
-              <p>Cargando turnos confirmadas...</p>
+          {/* Confirmados */}
+          {renderDropdown(
+            "confirmed",
+            "Confirmados",
+            openDropdown === "confirmed",
+            () => handleDropdownToggle("confirmed"),
+            loadingConfirmed ? (
+              <p>Cargando turnos confirmados...</p>
             ) : (
-              <AppointmentConfirmedTable
-                appointments={confirmedAppointments}
-                refreshAppointments={fetchConfirmedAppointments}
-              />
-            )}
-          </Dropdown>
+              <AppointmentConfirmedTable appointments={confirmedAppointments} refreshAppointments={fetchConfirmedAppointments} />
+            )
+          )}
 
-          {/* Cancelled Appointments Section */}
-          <Dropdown
-            title="Cancelados"
-            isOpen={openDropdown === "cancelled"}
-            onToggle={() => handleDropdownToggle("cancelled")}
-          >
-            {loadingCancelled ? (
-              <p>Cargando turnos canceladas...</p>
+          {/* Cancelados */}
+          {renderDropdown(
+            "cancelled",
+            "Cancelados",
+            openDropdown === "cancelled",
+            () => handleDropdownToggle("cancelled"),
+            loadingCancelled ? (
+              <p>Cargando turnos cancelados...</p>
             ) : (
-              <AppointmentCancelledTable
-                appointments={cancelledAppointments}
-                refreshAppointments={fetchCancelledAppointments}
-              />
-            )}
-          </Dropdown>
+              <AppointmentCancelledTable appointments={cancelledAppointments} refreshAppointments={fetchCancelledAppointments} />
+            )
+          )}
         </div>
       </div>
     </div>

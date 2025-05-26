@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { FiLogOut } from "react-icons/fi"; // Icono para el botón de logout
+import { FiLogOut, FiSmartphone, FiClock } from "react-icons/fi"; // Icono para el botón de logout
 import { jwtDecode } from "jwt-decode"; // Asegúrate de instalar esta dependencia
 import { Switch } from "@headlessui/react"; // Asegúrate de instalar @headlessui/react
 import { useConversationModeStore } from "../store/ConversationalMode";
@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
     };
 
     const fetchPhoneNumber = async () => {
-      
+
       try {
         const response = await axios.get(
           `${apiUrl}/api/whatsapp/phone-number`,
@@ -49,7 +49,7 @@ const Navbar: React.FC = () => {
         );
         const { phoneNumber } = response.data;
         setPhoneNumber(phoneNumber ? phoneNumber : false);
-        localStorage.setItem("phoneNumber", phoneNumber);        
+        localStorage.setItem("phoneNumber", phoneNumber);
       } catch (err) {
         console.error("Error fetching phone number:", err);
         setPhoneNumber("No autenticado");
@@ -67,7 +67,7 @@ const Navbar: React.FC = () => {
     return () => {
       clearInterval(intervalWhatsAppMode); // Limpia el intervalo de WhatsApp mode
       clearInterval(intervalPhoneNumber); // Limpia el intervalo de phone number
-    }; 
+    };
   }, []);
 
   const handleToggleConversationalMode = async () => {
@@ -97,15 +97,18 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-blue-500 to-purple-600 py-4 px-15 flex justify-between items-center shadow-md">
+    <nav className="bg-gradient-to-r from-blue-500 to-purple-600 py-4 px-12 flex justify-between items-center shadow-md">
       <div className="text-white text-lg font-semibold ml-2">
         {phoneNumber ? (
           <span>
             {" "}
-            {userName} - 📱 {phoneNumber}
+            {userName} - <FiSmartphone className="inline-block mb-1 mx-1 w-6 h-6 hover:scale-110 hover:duration-300" /> {phoneNumber}
           </span>
         ) : (
-          <span>⌛ Esperando el escaneo del código QR...</span>
+          <span className="flex items-center gap-2">
+            <FiClock className="animate-pulse text-white text-xl w-6 h-6" />
+            Esperando el escaneo del código QR...
+          </span>
         )}
       </div>
       <div className="flex items-center space-x-4">
@@ -115,7 +118,7 @@ const Navbar: React.FC = () => {
               checked={isConversationalMode}
               onChange={handleToggleConversationalMode}
               className={`${isConversationalMode ? "bg-green-600" : "bg-gray-200"
-                } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
+                } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 hover:scale-105 hover:duration-300`}
             >
               <span className="sr-only">Enable conversational mode</span>
               <span
@@ -123,16 +126,16 @@ const Navbar: React.FC = () => {
                   } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
               />
             </Switch>
-            <span className="text-white text-sm">
+            <span className="text-white text-lg">
               Modo conversacional {isConversationalMode ? "ON" : "OFF"}
             </span>
           </>
         )}
         <button
-          className="flex items-center font-semibold text-white mx-3  px-4 py-2 rounded-full hover:bg-red-500 hover:text-white transition duration-200 ease-in-out focus:outline-none"
+          className="flex text-lg items-center font-semibold text-white mx-3  px-4 py-2 rounded-full hover:bg-red-500 hover:text-white transition duration-200 ease-in-out focus:outline-none"
           onClick={handleLogout}
         >
-          <FiLogOut className="mr-2" /> Cerrar sesión
+          <FiLogOut className="mr-2 " /> Cerrar sesión
         </button>
       </div>
     </nav>

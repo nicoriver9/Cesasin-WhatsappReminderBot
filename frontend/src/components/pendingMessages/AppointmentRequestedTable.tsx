@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { FaCommentDots } from 'react-icons/fa';
+import { FaCommentDots, FaSearch, FaTimes } from 'react-icons/fa';
 import MessageModal from './utils/MessageModal';
 import ConfirmationModal from './utils/ConfirmationModal';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import { useConversationModeStore } from '../../store/ConversationalMode';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 interface User {
   id: number;
   username: string;
-  // Añade más campos según la estructura de tu payload
 }
 
-// Update the component props to include the refresh function
+interface Response {
+  response_id: number;
+  patient_full_name: string;
+  patient_phone: string;
+  response: string;
+  created_at: string;
+  [key: string]: any;
+}
+
 const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () => void }> = ({ responses, refreshResponses }) => {
-  
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
@@ -22,12 +30,15 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPhoneNumber, setIsPhoneNumber] = useState<string>('');
+  
+  // Estados para filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchField, setSearchField] = useState<'patient_full_name' | 'patient_phone' | 'date'>('patient_full_name');
+  const [filteredResponses, setFilteredResponses] = useState<Response[]>([]);
+
   const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const { isConversationalMode } = useConversationModeStore();
-
-  const [isAlertVisible, setIsAlertVisible] = useState(false);
-  const [alertMessage, setAlertMessage] = useState<string>('');
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -45,6 +56,35 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
     }
   }, []);
 
+  // Filtrado y ordenación
+  useEffect(() => {
+    let results = [...responses];
+    
+    // Aplicar filtro
+    if (searchTerm) {
+      results = results.filter(response => {
+        let fieldValue: string;
+        
+        if (searchField === 'date') {
+          fieldValue = new Date(response.created_at).toLocaleDateString('es-AR');
+        } else {
+          fieldValue = String(response[searchField]).toLowerCase();
+        }
+        
+        return fieldValue.includes(searchTerm.toLowerCase());
+      });
+    }
+    
+    // Ordenar por fecha descendente
+    results.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA;
+    });
+    
+    setFilteredResponses(results);
+  }, [responses, searchTerm, searchField]);
+
   const handleSendClick = (message: any) => {
     setSelectedMessage(message);
     setIsMessageModalOpen(true);
@@ -59,8 +99,8 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
     if (selectedMessage) {
       setSelectedMessage({ ...selectedMessage, message });
     }
-    setIsMessageModalOpen(false); // Cerrar el modal de mensaje
-    setIsConfirmationModalOpen(true); // Abrir el modal de confirmación
+    setIsMessageModalOpen(false);
+    setIsConfirmationModalOpen(true);
   };
 
   const handleConfirmSend = async () => {
@@ -86,11 +126,9 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-      
-      setIsConfirmationModalOpen(false);      
+      if (!response.ok) throw new Error('Failed to send message');
+
+      setIsConfirmationModalOpen(false);
       refreshResponses();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -100,66 +138,143 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
   };
 
   const handleShowAlert = (message: string) => {
-    setAlertMessage(message);
-    setIsAlertVisible(true);
-  };
-
-  const handleCloseAlert = () => {
-    setIsAlertVisible(false);
+    Swal.fire({
+      title: '📩 Respuesta del paciente',
+      html: `<div style="max-height: 300px; overflow-y: auto; text-align: left;">${message}</div>`,
+      icon: 'info',
+      confirmButtonText: 'Cerrar',
+      confirmButtonColor: '#3b82f6',
+      customClass: {
+        popup: 'rounded-xl shadow-md',
+        confirmButton: 'text-sm px-4 py-2'
+      },
+      width: '40em',
+      padding: '1.5em'
+    });
   };
 
   return (
     <>
+      <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md overflow-y-auto max-h-[80vh]">
+        {/* Filtros de búsqueda */}
+        <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Buscar por:
+              </label>
+              <select
+                value={searchField}
+                onChange={(e) => setSearchField(e.target.value as any)}
+                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="patient_full_name">Nombre del Paciente</option>
+                <option value="patient_phone">Teléfono</option>
+                <option value="date">Fecha</option>
+              </select>
+            </div>
 
-      <div className="overflow-x-auto bg-gradient-to-r from-blue-400 to-indigo-600 p-4 rounded-lg shadow-md overflow-y-auto max-h-96">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {searchField === "date" ? "Seleccionar fecha" : "Término de búsqueda"}
+              </label>
+              <div className="relative">
+                {searchField === "date" ? (
+                  <input
+                    type="date"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full p-2 pl-10 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={`Buscar por ${searchField.replace("_", " ")}`}
+                    />
+                    <FaSearch className="absolute left-3 top-3 text-gray-400" />
+                  </>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setSearchField("patient_full_name");
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 flex items-center gap-2"
+            >
+              <FaTimes /> Limpiar
+            </button>
+          </div>
+        </div>
+
+        {/* Tabla */}
         <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow-lg">
           <thead className="bg-blue-500 text-white">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Acción</th>              
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Acción</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Nombre del Paciente</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Teléfono</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Mensaje</th>              
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha de Pedido</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Mensaje</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {responses.length > 0 ? (
-              responses.map((message, index) => (
-                <tr key={`${message.whatsapp_msg_id}-${index}`} className="hover:bg-gray-100 transition-colors duration-150">
+            {filteredResponses.length > 0 ? (
+              filteredResponses.map((message) => (
+                <tr key={message.response_id} className="hover:bg-gray-50 transition-colors duration-150">
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center">
                     {isPhoneNumber.length > 0 && !isConversationalMode && (
                       <button
                         onClick={() => handleSendClick(message)}
                         className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                        title="Enviar mensaje"
                       >
                         <FaCommentDots />
                       </button>
                     )}
-                  </td>                
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{message.patient_full_name}</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{message.patient_phone}</td>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {message.patient_full_name}
+                  </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {message.patient_phone}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <button
-                      onClick={() => handleShowAlert(message.response)} // Cambiado aquí
-                      className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                      onClick={() => handleShowAlert(message.response)}
+                      className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
                     >
-                      Ver mensaje completo
+                      Ver completo
                     </button>
                   </td>
-                  
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(message.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(message.created_at).toLocaleString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td colSpan={5} className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                  No hay turnos solicitados
+                  {searchTerm ? "No se encontraron resultados" : "No hay turnos solicitados"}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
       <MessageModal
         isOpen={isMessageModalOpen}
         onClose={handleCloseModal}
@@ -174,14 +289,9 @@ const PatientResponsesTable: React.FC<{ responses: any[], refreshResponses: () =
         isLoading={isLoading}
       />
 
-      {error && <div className="mt-4 text-red-500">{error}</div>}
-
-      {isAlertVisible && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 mt-4 p-4 bg-blue-100 text-blue-700 rounded shadow-lg z-50 flex justify-between items-center">
-          <span>{alertMessage}</span>
-          <button onClick={handleCloseAlert} className="ml-4 text-blue-700 hover:text-blue-900">
-            &times; {/* Cruz para cerrar */}
-          </button>
+      {error && (
+        <div className="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
         </div>
       )}
     </>

@@ -3,31 +3,34 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode.react";
 import Navbar from "./NavBar";
-import { Loader2 } from "lucide-react"; // Icono de carga para el spinner
+import { Loader2, RefreshCcw, Inbox } from "lucide-react";
+import "./QrCodeViewer.css"; // Si usás el CSS externo
 
 const QRCodeViewer: React.FC = () => {
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number>(30);
-  const [restarting, setRestarting] = useState<boolean>(false); // Estado para el spinner de reinicio
-  const [restartMessage, setRestartMessage] = useState<string | null>(null); // Mensaje tras reinicio
+  const [restarting, setRestarting] = useState<boolean>(false);
+  const [restartMessage, setRestartMessage] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const token = localStorage.getItem("access_token");
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  // Obtener el código QR
   const fetchAndUpdateQRCode = useCallback(async () => {
     try {
       const response = await axios.get(`${apiUrl}/api/whatsapp/get-qr`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.data.message === "Client is already authenticated" || response.data.message === "ready") {
+      if (
+        response.data.message === "Client is already authenticated" ||
+        response.data.message === "ready"
+      ) {
         navigate("/excel-viewer");
       } else if (response.data.message === "Client status unknown") {
-        setError("Client status unknown. Please wait...");
+        setError("Estado del cliente desconocido.");
         setQrCodeData(null);
       } else if (response.data.qrCode) {
         if (response.data.qrCode !== qrCodeData) {
@@ -40,7 +43,7 @@ const QRCodeViewer: React.FC = () => {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         navigate("/");
       } else {
-        setError("Error fetching QR code");
+        setError("Error al obtener el código QR");
       }
     } finally {
       setLoading(false);
@@ -50,97 +53,101 @@ const QRCodeViewer: React.FC = () => {
   useEffect(() => {
     fetchAndUpdateQRCode();
     const intervalId = setInterval(fetchAndUpdateQRCode, 5000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }, [fetchAndUpdateQRCode]);
 
   useEffect(() => {
     let timerId: number;
     if (qrCodeData && countdown > 0) {
       timerId = window.setInterval(() => {
-        setCountdown((prevCountdown) => prevCountdown - 1);
+        setCountdown((prev) => prev - 1);
       }, 1000);
     }
-
-    return () => {
-      if (timerId) clearInterval(timerId);
-    };
+    return () => clearInterval(timerId);
   }, [qrCodeData, countdown]);
 
-  // Función para reiniciar el cliente de WhatsApp
   const handleRestartClient = async () => {
     setRestarting(true);
     setRestartMessage(null);
-
     try {
-      const response = await axios.post(`${apiUrl}/api/whatsapp/restart-client`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setRestartMessage(response.data.message || "Cliente reiniciado correctamente.");
-      fetchAndUpdateQRCode(); // Refrescar el QR después del reinicio
+      const response = await axios.post(
+        `${apiUrl}/api/whatsapp/restart-client`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setRestartMessage(response.data.message || "Cliente reiniciado.");
+      fetchAndUpdateQRCode();
     } catch (error) {
-      setRestartMessage("Error al reiniciar el cliente de WhatsApp.");
+      setRestartMessage("Error al reiniciar WhatsApp.");
     } finally {
       setRestarting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-400 to-indigo-600 flex flex-col items-center">
+    <div className="h-screen overflow-hidden bg-gradient-to-r from-blue-400 to-indigo-600 flex flex-col">
       <Navbar />
-      <div className="flex justify-center items-center mt-10">
-        <div className="bg-white shadow-2xl rounded-lg p-6 w-full max-w-md">
-          <div className="flex flex-col justify-center items-center">
-            {/* Botón para mensajes pendientes */}
-            <button
-              onClick={() => navigate("/pending-messages")}
-              className="mb-6 px-6 py-3 bg-blue-500 text-white rounded-full shadow-md hover:bg-blue-600 hover:shadow-lg transition duration-300 ease-in-out"
-            >
-              Ir a mensajes pendientes
-            </button>
+      <div className="flex-grow flex justify-center items-center animate-fade-in-up px-4">
+        <div className="bg-white shadow-xl rounded-2xl my-2 p-6 w-full max-w-md border-t-4 border-blue-500 flex flex-col items-center">
+          <h2 className="text-2xl font-bold text-blue-600 mb-6 text-center">
+            Escanea el código QR
+          </h2>
 
-            {/* Botón para reiniciar el cliente de WhatsApp */}
-            <button
-              onClick={handleRestartClient}
-              className="mb-6 px-6 py-3 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 hover:shadow-lg transition duration-300 ease-in-out flex items-center"
-              disabled={restarting}
-            >
-              {restarting ? (
-                <>
-                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                  Reiniciando...
-                </>
-              ) : (
-                "Reiniciar Cliente WhatsApp"
-              )}
-            </button>
+          <button
+            onClick={() => navigate("/pending-messages")}
+            className="mb-6 px-6 py-2 bg-blue-500 text-white rounded-full shadow-md hover:bg-blue-600 hover:shadow-lg transition flex items-center gap-2"
+          >
+            <Inbox className="h-5 w-5" />
+            Ir a mensajes pendientes
+          </button>
 
-            {/* Mensaje de estado del reinicio */}
-            {restartMessage && (
-              <p className="text-gray-700 text-center text-lg font-semibold mb-4">{restartMessage}</p>
-            )}
 
-            {loading ? (
-              <p className="text-gray-700 text-lg">Cargando código QR...</p>
-            ) : error ? (
-              <p className="text-red-500 text-lg">{error}</p>
-            ) : qrCodeData ? (
-              <div className="mt-4 text-center">
-                <QRCode value={qrCodeData} size={256} level="H" />
-                <p className="mt-4 text-gray-700 font-semibold">
-                  Escanea este código QR con tu móvil
-                </p>
-                <p className="mt-2 text-gray-600">
-                  El código QR caduca en: {countdown} segundos.
-                </p>
-              </div>
+          <button
+            onClick={handleRestartClient}
+            className="mb-6 px-6 py-3 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 hover:shadow-lg transition flex items-center gap-2"
+            disabled={restarting}
+          >
+            {restarting ? (
+              <>
+                <Loader2 className="animate-spin h-5 w-5" />
+                Reiniciando...
+              </>
             ) : (
-              <p className="text-gray-700 text-lg">No hay código QR disponible</p>
+              <>
+                <RefreshCcw className="h-5 w-5" />
+                Reiniciar WhatsApp
+              </>
             )}
-          </div>
+          </button>
+
+          {restartMessage && (
+            <p className="text-gray-700 text-center text-lg font-semibold mb-4">
+              {restartMessage}
+            </p>
+          )}
+
+          {loading ? (
+            <p className="text-gray-700 text-lg">Cargando código QR...</p>
+          ) : error ? (
+            <p className="text-red-500 text-lg">{error}</p>
+          ) : qrCodeData ? (
+            <div className="mt-2 flex flex-col items-center text-center">
+              <div className="flex justify-center">
+                <QRCode value={qrCodeData} size={240} level="H" />
+              </div>
+              <p className="mt-4 text-lg text-gray-800 font-medium">
+                Escaneá con WhatsApp en tu teléfono
+              </p>
+              <p className="mt-2 text-sm text-gray-700 italic">
+                QR válido por {countdown} segundos
+              </p>
+            </div>
+
+          ) : (
+            <p className="text-gray-700 text-lg">No hay código QR disponible</p>
+          )}
         </div>
       </div>
     </div>

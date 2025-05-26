@@ -1,0 +1,39 @@
+/* dashboard.css */
+
+/* Asegura que el fondo abarque toda la altura */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to right, #60a5fa, #6366f1);
+}
+
+/* El contenedor principal del Dashboard */
+#dashboard-root {
+    min-height: 100vh;
+    /* 100% de la pantalla como mínimo */
+    background: linear-gradient(to right, #60a5fa, #6366f1);
+    padding-bottom: 100px;
+    /* margen inferior visual para evitar corte */
+    box-sizing: border-box;
+}
+
+/* dashboard.css */
+
+.title-animated::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background-color: white;
+    width: 0;
+    animation: fillLine 1s ease-out forwards;
+}
+
+@keyframes fillLine {
+    to {
+        width: 20%;
+    }
+}

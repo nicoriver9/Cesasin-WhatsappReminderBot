@@ -14,7 +14,7 @@ const Dropdown: React.FC<DropdownProps> = ({ title, children, isOpen, onToggle }
     <div className="relative">
       <button
         onClick={onToggle}
-        className="w-full px-4 py-2 bg-blue-500 text-white font-semibold text-left rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200"
+        className="w-full px-4 py-2 text-lg bg-blue-700 text-white font-semibold text-left rounded-lg shadow-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200"
       >
         {title}
       </button>
