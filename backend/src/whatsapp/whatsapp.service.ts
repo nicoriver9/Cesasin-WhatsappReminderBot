@@ -57,7 +57,7 @@ export class WhatsappService {
     // this.client.initialize();
     this.initializeClient();
   }
-
+  
   private loadPhoneNumbersToAvoid() {
     try {
       const filePath = path.join(
@@ -115,6 +115,58 @@ export class WhatsappService {
       this.logger.warn(`WhatsApp client disconnected. Reason: ${reason}`);
       this.clientStatus$.next("disconnected");
     });
+    this.client.on("message", async (message: Message) => {
+      const phoneNumbersToAvoid = this.loadPhoneNumbersToAvoid();
+      const phoneList = phoneNumbersToAvoid.phones;
+      const phoneArray = [];
+
+      for (const [_, value] of Object.entries(phoneList)) {
+        phoneArray.push(value);
+      }
+
+      console.log("message", message.body);
+
+      const { from } = message;
+
+      if (
+        from.endsWith("@g.us") ||
+        phoneArray.includes(`${from.replace("@c.us", "")}`)
+      ) {
+        return; // Salir de la función para evitar procesar mensajes de grupo
+      }
+
+      const currentDate = new Date();
+
+      if (this.conversationModeActive) {
+        try {
+          const reminderMessages = await this.prisma.whatsappMsg.findFirst({
+            where: {
+              patient_phone: from,
+              task_status: { in: [0, 2] },
+              reminder_state: { not: 2 },
+              appointment_date: {
+                gt: currentDate, // Filtra para que la fecha del turno sea mayor a la fecha actual'
+              },
+            },
+            orderBy: {
+              creation_date: "desc",
+            },
+          });
+
+          if (!reminderMessages) {
+            await this.handleConversationalMessage(message);
+          } else {
+            //console.log('reminderMessages',reminderMessages)
+            await this.handleReminderMessage(message, reminderMessages);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    });
+
+    this.conversationalResponses = this.loadConversationalResponses();
+    this.reminderResponses = this.loadReminderResponses();
 
     this.client.initialize();
   }
