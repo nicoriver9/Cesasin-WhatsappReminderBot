@@ -7,6 +7,7 @@ import Navbar from "./NavBar"; // Importar el componente Navbar
 import { FiUpload } from "react-icons/fi"; // Asegúrate de instalar react-icons
 import { FaSpinner } from "react-icons/fa"; // Import spinner icon
 import { useConversationModeStore } from "../store/ConversationalMode";
+import Modal from 'react-modal'; // Asegúrate de instalar react-modal
 
 interface MedicalService {
   medical_service: string;
@@ -22,7 +23,8 @@ const ExcelViewer: React.FC = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
   const { setIsConversationalMode } = useConversationModeStore();
   const fileInputRef = useRef<HTMLInputElement | null>(null); // {{ edit_1 }}
-
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(()=>{
     
@@ -225,7 +227,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
   const getNextBusinessDay = (date: Date): Date => {
     const nextDay = new Date(date);
-    nextDay.setDate(nextDay.getDate() + 1);
+    nextDay.setDate(nextDay.getDate() + 0);
 
     while (nextDay.getDay() === 0) {
       // Skip Sundays
@@ -289,10 +291,12 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       setExcelData([]);
       setFormattedPatients([]);
       startConversationMode();
-      alert("Recordatorios enviados exitosamente!");
+      setModalMessage("Recordatorios enviados exitosamente!");
+      setModalIsOpen(true); // Abre el modal
     } catch (err) {
       console.error("Error sending reminders:", err);
-      alert("Error al enviar los recordatorios.");
+      setModalMessage("Error al enviar los recordatorios.");
+      setModalIsOpen(true); // Abre el modal
       navigate('/');
     } finally {
       await startConversationMode();
@@ -421,6 +425,11 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           </div>
         )}
       </div>
+      <Modal isOpen={modalIsOpen} onRequestClose={() => setModalIsOpen(false)}>
+        <h2>Notificación</h2>
+        <p>{modalMessage}</p>
+        <button onClick={() => setModalIsOpen(false)}>Cerrar</button>
+      </Modal>
     </div>
   );
 };
