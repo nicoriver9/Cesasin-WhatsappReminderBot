@@ -1,12 +1,12 @@
 {
     "welcome": {
-        "message": "Hola, este es un recordatorio del turno del paciente {patient_fullname} el {attachment} con {doctor}.",
+        "message": "Buen dia, este es un recordatorio del turno del paciente {patient_fullname} el {attachment} con {doctor}, en sede **Sobremonte 317 Ciudad**",
         "additionalMessage": "Por favor, elija alguna de las opciones disponibles",
         "additionalOptionsMessage": "Por favor, elija una opción:",
         "options": {
-            "1": "Confirmar cita",
-            "2": "Reprogramar cita",
-            "3": "Cancelar cita"
+            "1": "Confirmar turno",
+            "2": "Reprogramar turno",
+            "3": "Cancelar turno"
         }
     }
 }

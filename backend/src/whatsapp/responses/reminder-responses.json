@@ -5,8 +5,8 @@
     },
     
     "confirmed": { 
-      "message": "Estimado/a {contactName}, nos comunicamos para confirmar la cita del paciente {patientFullName} programada para el {appointmentDate} con el Dr./Lic. {doctorName}. La consulta se llevará a cabo en nuestra sede ubicada en Sobremonte 317, Ciudad.",
-      "additionalMessage": "Información importante:\n\nPor favor, le pedimos que llegue 10 minutos antes de su horario programado y se dirija al área de Secretaría para registrarse.\n"
+      "message": "Estimado/a {patientFullName} su turno queda confirmado con el Dr./Lic. {doctorName} el {appointmentDate} en Sobremonte 317, Ciudad.",
+      "additionalMessage": "Le pedimos que llegue 10 minutos antes de su horario programado y se dirija al área de Secretaría para registrarse.\n"
     },
     "rescheduled": {
       "message": "Por favor, escriba una nueva fecha para su turno."      
